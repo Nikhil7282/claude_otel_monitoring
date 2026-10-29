@@ -466,13 +466,17 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "noValue": "\u2013"
+          "noValue": "\u2013",
+          "custom": {
+            "minWidth": 70,
+            "align": "auto"
+          }
         },
         "overrides": [
           {
             "matcher": {
               "id": "byName",
-              "options": "Estimated cost (API-equivalent)"
+              "options": "Est. cost (API)"
             },
             "properties": [
               {
@@ -520,7 +524,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Lines added"
+              "options": "Added lines"
             },
             "properties": [
               {
@@ -532,7 +536,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Lines removed"
+              "options": "Removed lines"
             },
             "properties": [
               {
@@ -568,7 +572,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Edit acceptance"
+              "options": "Edits kept"
             },
             "properties": [
               {
@@ -588,6 +592,30 @@
                 "value": "dateTimeFromNow"
               }
             ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Company Account"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 230
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Last seen"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 130
+              }
+            ]
           }
         ]
       },
@@ -595,7 +623,7 @@
         "showHeader": true,
         "sortBy": [
           {
-            "displayName": "Estimated cost (API-equivalent)",
+            "displayName": "Est. cost (API)",
             "desc": true
           }
         ]
@@ -613,15 +641,15 @@
               "Time": true
             },
             "renameByName": {
-              "Value #A": "Estimated cost (API-equivalent)",
+              "Value #A": "Est. cost (API)",
               "Value #B": "Tokens",
               "Value #C": "Active time",
               "Value #D": "Sessions",
-              "Value #E": "Lines added",
-              "Value #F": "Lines removed",
+              "Value #E": "Added lines",
+              "Value #F": "Removed lines",
               "Value #G": "Commits",
               "Value #H": "PRs",
-              "Value #I": "Edit acceptance",
+              "Value #I": "Edits kept",
               "Value #J": "Last seen",
               "host_name": "Device",
               "device_id": "Serial",
@@ -637,15 +665,15 @@
               "Device": 0,
               "Serial": 1,
               "Company Account": 2,
-              "Estimated cost (API-equivalent)": 3,
+              "Est. cost (API)": 3,
               "Tokens": 4,
               "Active time": 5,
               "Sessions": 6,
-              "Lines added": 7,
-              "Lines removed": 8,
+              "Added lines": 7,
+              "Removed lines": 8,
               "Commits": 9,
               "PRs": 10,
-              "Edit acceptance": 11,
+              "Edits kept": 11,
               "Last seen": 12
             }
           }
@@ -685,7 +713,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (device_id, host_name) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset 1d)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d]))",
+          "expr": "sum by (device_id, host_name) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d])) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d))",
           "refId": "A",
           "format": "time_series",
           "instant": false,
@@ -731,7 +759,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (model) ((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d]) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset 1d)) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d]))",
+          "expr": "sum by (model) ((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d])) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d))",
           "refId": "A",
           "format": "time_series",
           "instant": false,
@@ -820,6 +848,15 @@
         "orientation": "horizontal",
         "displayMode": "basic",
         "showUnfilled": true,
+        "namePlacement": "top",
+        "valueMode": "color",
+        "sizing": "manual",
+        "minVizHeight": 24,
+        "maxVizHeight": 36,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 14
+        },
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -861,7 +898,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (host_name) ((max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "expr": "sum by (host_name) ((max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range])) or 0 * sum by (host_name) ((max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
           "refId": "B",
           "format": "time_series",
           "instant": true,
@@ -879,6 +916,15 @@
         "orientation": "horizontal",
         "displayMode": "basic",
         "showUnfilled": true,
+        "namePlacement": "top",
+        "valueMode": "color",
+        "sizing": "manual",
+        "minVizHeight": 24,
+        "maxVizHeight": 36,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 14
+        },
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
