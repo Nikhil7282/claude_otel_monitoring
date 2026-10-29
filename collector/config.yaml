@@ -5,6 +5,15 @@ receivers:
         endpoint: 0.0.0.0:4317
 
 processors:
+  # Company Account allowlist. A data point is kept only when user.email exactly matches
+  # one of these addresses; Personal Accounts and data with no email are dropped.
+  filter/company-accounts:
+    error_mode: propagate
+    metrics:
+      datapoint:
+        - >-
+          not (attributes["user.email"] == "company-one@example.com"
+          or attributes["user.email"] == "company-two@example.org")
   batch: {}
 
 exporters:
@@ -18,5 +27,5 @@ service:
   pipelines:
     metrics:
       receivers: [otlp]
-      processors: [batch]
+      processors: [filter/company-accounts, batch]
       exporters: [prometheusremotewrite]

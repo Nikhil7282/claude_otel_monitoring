@@ -54,21 +54,37 @@ done
 echo "Sending metrics..."
 # The Collector can take a moment to accept connections, so retry the first send.
 for _ in $(seq 20); do
-  send_metric SMOKE-COMPANY-COM company-one@example.com && break
+  send_metric SMOKE-PERSONAL someone@gmail.com && break
   sleep 1
 done
+send_metric SMOKE-LOOKALIKE company-one@example.com.evil.io
+send_metric SMOKE-NO-EMAIL ""
+# Company Account Devices go last: once they are stored, everything sent before
+# them has been through the Collector, so an absent Device was really dropped.
+send_metric SMOKE-COMPANY-COM company-one@example.com
+send_metric SMOKE-COMPANY-ORG company-two@example.org
 
 echo "Assertions:"
-if wait_for_series '{device_id="SMOKE-COMPANY-COM"}'; then
-  pass "Company Account Device is stored"
-else
-  fail "Company Account Device is stored"
-fi
+for device in SMOKE-COMPANY-COM SMOKE-COMPANY-ORG; do
+  if wait_for_series "{device_id=\"$device\"}"; then
+    pass "Company Account Device $device is stored"
+  else
+    fail "Company Account Device $device is stored"
+  fi
+done
 if [[ $(series_count '{device_id="SMOKE-COMPANY-COM", host_name="SMOKE-COMPANY-COM-host", user_email="company-one@example.com"}') != 0 ]]; then
   pass "Device carries device_id, host_name and user_email labels"
 else
   fail "Device carries device_id, host_name and user_email labels"
 fi
+
+for device in SMOKE-PERSONAL SMOKE-LOOKALIKE SMOKE-NO-EMAIL; do
+  if [[ $(series_count "{device_id=\"$device\"}") == 0 ]]; then
+    pass "Personal Account Device $device is dropped"
+  else
+    fail "Personal Account Device $device is dropped"
+  fi
+done
 
 if ((failures > 0)); then
   echo "$failures assertion(s) failed"
