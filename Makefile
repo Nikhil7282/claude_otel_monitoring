@@ -1,4 +1,5 @@
-COMPOSE := docker compose -f compose.yaml
+# lint only parses config, so a placeholder token is enough when none is set.
+COMPOSE := OTEL_AUTH_TOKEN=$${OTEL_AUTH_TOKEN:-lint-placeholder} docker compose -f compose.yaml
 
 .PHONY: test lint smoke
 

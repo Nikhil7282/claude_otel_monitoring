@@ -8,23 +8,27 @@ PROJECT=claude-otel-smoke
 COMPOSE=(docker compose -p "$PROJECT" -f compose.yaml -f compose.test.yaml)
 TELEMETRYGEN_IMAGE=ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.120.0
 PROM_URL=http://127.0.0.1:19090
+# Throwaway token so the tests never need the real secret.
+OTEL_AUTH_TOKEN=$(openssl rand -hex 32)
+export OTEL_AUTH_TOKEN
 failures=0
 
 cleanup() { "${COMPOSE[@]}" down -v --remove-orphans >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
-# send_metric DEVICE_ID EMAIL [extra telemetrygen flags...]
-# Sends one cumulative Sum data point. device.id/host.name are resource attributes and
-# user.email is a data point attribute, matching what Claude Code sends.
+# send_metric DEVICE_ID EMAIL [TOKEN]
+# Sends one cumulative Sum data point, with the shared token unless TOKEN is given
+# ("" sends no token). device.id/host.name are resource attributes and user.email is
+# a data point attribute, matching what Claude Code sends.
 send_metric() {
-  local device=$1 email=$2
-  shift 2
+  local device=$1 email=$2 token=${3-$OTEL_AUTH_TOKEN}
   local args=(metrics --otlp-endpoint otel-collector:4317 --otlp-insecure
     --metric-type Sum --metrics 1
     --otlp-attributes "device.id=\"$device\""
     --otlp-attributes "host.name=\"$device-host\"")
   if [[ -n $email ]]; then args+=(--telemetry-attributes "user.email=\"$email\""); fi
-  docker run --rm --network "${PROJECT}_default" "$TELEMETRYGEN_IMAGE" "${args[@]}" "$@" >/dev/null 2>&1
+  if [[ -n $token ]]; then args+=(--otlp-header "Authorization=\"Bearer $token\""); fi
+  docker run --rm --network "${PROJECT}_default" "$TELEMETRYGEN_IMAGE" "${args[@]}" >/dev/null 2>&1
 }
 
 series_count() {
@@ -59,6 +63,9 @@ for _ in $(seq 20); do
 done
 send_metric SMOKE-LOOKALIKE company-one@example.com.evil.io
 send_metric SMOKE-NO-EMAIL ""
+# Rejected sends exit non-zero, which is expected here.
+send_metric SMOKE-NO-TOKEN company-one@example.com "" || true
+send_metric SMOKE-WRONG-TOKEN company-one@example.com "$(openssl rand -hex 32)" || true
 # Company Account Devices go last: once they are stored, everything sent before
 # them has been through the Collector, so an absent Device was really dropped.
 send_metric SMOKE-COMPANY-COM company-one@example.com
@@ -83,6 +90,13 @@ for device in SMOKE-PERSONAL SMOKE-LOOKALIKE SMOKE-NO-EMAIL; do
     pass "Personal Account Device $device is dropped"
   else
     fail "Personal Account Device $device is dropped"
+  fi
+done
+for device in SMOKE-NO-TOKEN SMOKE-WRONG-TOKEN; do
+  if [[ $(series_count "{device_id=\"$device\"}") == 0 ]]; then
+    pass "Device $device without the shared token is rejected"
+  else
+    fail "Device $device without the shared token is rejected"
   fi
 done
 

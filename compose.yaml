@@ -3,6 +3,8 @@
 services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.120.0
+    environment:
+      OTEL_AUTH_TOKEN: ${OTEL_AUTH_TOKEN:?set OTEL_AUTH_TOKEN in .env}
     volumes:
       - ./collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
     depends_on:

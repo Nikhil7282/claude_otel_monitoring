@@ -1,8 +1,15 @@
+extensions:
+  # Every Device sends this shared token; requests without it are refused.
+  bearertokenauth:
+    token: ${env:OTEL_AUTH_TOKEN}
+
 receivers:
   otlp:
     protocols:
       grpc:
         endpoint: 0.0.0.0:4317
+        auth:
+          authenticator: bearertokenauth
 
 processors:
   # Company Account allowlist. A data point is kept only when user.email exactly matches
@@ -24,6 +31,7 @@ exporters:
       enabled: true
 
 service:
+  extensions: [bearertokenauth]
   pipelines:
     metrics:
       receivers: [otlp]
