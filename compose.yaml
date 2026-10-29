@@ -1,5 +1,6 @@
-# Server stack. No service publishes host ports here; compose.test.yaml exposes them
-# on localhost for tests, and the production front door is added separately.
+# Server stack. No service publishes host ports here; compose.local.yaml and
+# tests/compose.smoke.yaml expose them on localhost, and the production front door is
+# added separately.
 services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.130.0
@@ -24,5 +25,22 @@ services:
       - prometheus-data:/prometheus
     restart: unless-stopped
 
+  grafana:
+    image: grafana/grafana:11.5.2
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
 volumes:
   prometheus-data:
+  grafana-data:

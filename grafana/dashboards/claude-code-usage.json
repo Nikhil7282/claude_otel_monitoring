@@ -1,0 +1,892 @@
+{
+  "uid": "claude-code-usage",
+  "title": "Claude Code usage",
+  "description": "Claude Code usage per Device, from Company Accounts only.",
+  "tags": [
+    "claude-code"
+  ],
+  "timezone": "browser",
+  "editable": false,
+  "schemaVersion": 39,
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "refresh": "5m",
+  "templating": {
+    "list": [
+      {
+        "name": "account",
+        "label": "Company Account",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "label_values(claude_code_session_count_total, user_email)",
+          "refId": "account"
+        },
+        "definition": "label_values(claude_code_session_count_total, user_email)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "sort": 1
+      },
+      {
+        "name": "device",
+        "label": "Device",
+        "type": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "query": "query_result(group by (device_id, host_name) (max_over_time(claude_code_session_count_total{user_email=~\"$account\"}[$__range])))",
+          "refId": "device"
+        },
+        "definition": "query_result(group by (device_id, host_name) (max_over_time(claude_code_session_count_total{user_email=~\"$account\"}[$__range])))",
+        "regex": "/device_id=\"(?<value>[^\"]+)\".*host_name=\"(?<text>[^\"]+)\"/",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "sort": 1
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Summary",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Estimated cost (API-equivalent)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "A",
+          "format": "time_series",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "description": "Claude Code's own estimate at API prices. Max is a flat fee, so this is not the bill."
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Tokens",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "A",
+          "format": "time_series",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Active time",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 10,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum((max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "A",
+          "format": "time_series",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Sessions",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 14,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum((max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "A",
+          "format": "time_series",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value"
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Active Devices",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 1,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "count(sum by (device_id) ((max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range])) > 0)",
+          "refId": "A",
+          "format": "time_series",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "description": "Devices with any active time in the selected range."
+    },
+    {
+      "id": 7,
+      "type": "row",
+      "title": "Per Device",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Usage per Device",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 24,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "A",
+          "format": "table",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "B",
+          "format": "table",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "C",
+          "format": "table",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "D",
+          "format": "table",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]))",
+          "refId": "E",
+          "format": "table",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]))",
+          "refId": "F",
+          "format": "table",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "G",
+          "format": "table",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "H",
+          "format": "table",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\", decision=\"accept\"}[$__range]) - max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\", decision=\"accept\"}[$__range] offset $__range)) or max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\", decision=\"accept\"}[$__range])) / sum by (device_id, host_name, user_email) ((max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "I",
+          "format": "table",
+          "instant": true,
+          "range": false
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (device_id, host_name, user_email) (max_over_time(timestamp(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"})[$__range:5m])) * 1000",
+          "refId": "J",
+          "format": "table",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "noValue": "\u2013"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Estimated cost (API-equivalent)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tokens"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Active time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Sessions"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Lines added"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Lines removed"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Commits"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "PRs"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "short"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Edit acceptance"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "percentunit"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Last seen"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "dateTimeFromNow"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [
+          {
+            "displayName": "Estimated cost (API-equivalent)",
+            "desc": true
+          }
+        ]
+      },
+      "description": "Totals for the selected time range. Last seen is when the Device last reported while Claude Code was running.",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value #A": "Estimated cost (API-equivalent)",
+              "Value #B": "Tokens",
+              "Value #C": "Active time",
+              "Value #D": "Sessions",
+              "Value #E": "Lines added",
+              "Value #F": "Lines removed",
+              "Value #G": "Commits",
+              "Value #H": "PRs",
+              "Value #I": "Edit acceptance",
+              "Value #J": "Last seen",
+              "host_name": "Device",
+              "device_id": "Serial",
+              "user_email": "Company Account"
+            },
+            "indexByName": {}
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {
+              "Device": 0,
+              "Serial": 1,
+              "Company Account": 2,
+              "Estimated cost (API-equivalent)": 3,
+              "Tokens": 4,
+              "Active time": 5,
+              "Sessions": 6,
+              "Lines added": 7,
+              "Lines removed": 8,
+              "Commits": 9,
+              "PRs": 10,
+              "Edit acceptance": 11,
+              "Last seen": 12
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "row",
+      "title": "Trends",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Estimated cost (API-equivalent) per Device per day",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (device_id, host_name) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset 1d)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d]))",
+          "refId": "A",
+          "format": "time_series",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{host_name}}",
+          "interval": "1d"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {},
+      "interval": "1d"
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Tokens by model per day",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (model) ((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d]) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset 1d)) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d]))",
+          "refId": "A",
+          "format": "time_series",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{model}}",
+          "interval": "1d"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": []
+      },
+      "options": {},
+      "interval": "1d"
+    },
+    {
+      "id": 12,
+      "type": "row",
+      "title": "Output",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 13,
+      "type": "bargauge",
+      "title": "Lines of code per Device",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (host_name) ((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]))",
+          "refId": "A",
+          "format": "time_series",
+          "instant": true,
+          "range": false,
+          "legendFormat": "{{host_name}} added"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (host_name) ((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]))",
+          "refId": "B",
+          "format": "time_series",
+          "instant": true,
+          "range": false,
+          "legendFormat": "{{host_name}} removed"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "basic",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 14,
+      "type": "bargauge",
+      "title": "Commits and PRs per Device",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 25,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (host_name) ((max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "A",
+          "format": "time_series",
+          "instant": true,
+          "range": false,
+          "legendFormat": "{{host_name}} commits"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (host_name) ((max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "refId": "B",
+          "format": "time_series",
+          "instant": true,
+          "range": false,
+          "legendFormat": "{{host_name}} PRs"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "basic",
+        "showUnfilled": true,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    }
+  ]
+}

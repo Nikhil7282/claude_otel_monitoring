@@ -1,0 +1,12 @@
+# Local override for trying the stack on a laptop: exposes the Collector, Prometheus and
+# Grafana on localhost only. Usage: docker compose -f compose.yaml -f compose.local.yaml up -d
+services:
+  otel-collector:
+    ports:
+      - 127.0.0.1:4317:4317
+  prometheus:
+    ports:
+      - 127.0.0.1:19090:9090
+  grafana:
+    ports:
+      - 127.0.0.1:13000:3000

@@ -1,0 +1,9 @@
+# Smoke-test override: its own localhost ports so the test can run beside a local stack.
+# telemetrygen joins the Compose network directly, so the Collector needs no host port.
+services:
+  prometheus:
+    ports:
+      - 127.0.0.1:29090:9090
+  grafana:
+    ports:
+      - 127.0.0.1:23000:3000

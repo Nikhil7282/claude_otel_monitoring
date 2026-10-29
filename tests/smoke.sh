@@ -5,14 +5,18 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 PROJECT=claude-otel-smoke
-COMPOSE=(docker compose -p "$PROJECT" -f compose.yaml -f compose.test.yaml)
+COMPOSE=(docker compose -p "$PROJECT" -f compose.yaml -f tests/compose.smoke.yaml)
 TELEMETRYGEN_IMAGE=ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.130.0
-PROM_URL=http://127.0.0.1:19090
+PROM_URL=http://127.0.0.1:29090
+GRAFANA_URL=http://127.0.0.1:23000
+DASHBOARD_UID=claude-code-usage
 # Throwaway token so the tests never need the real secret.
 OTEL_AUTH_TOKEN=$(openssl rand -hex 32)
 export OTEL_AUTH_TOKEN
 # Test Company Account allowlist; the real one lives only in the server's .env.
 export COMPANY_ACCOUNTS=company-one@example.com,company-two@example.org
+GRAFANA_ADMIN_PASSWORD=$(openssl rand -hex 16)
+export GRAFANA_ADMIN_PASSWORD
 failures=0
 
 cleanup() { "${COMPOSE[@]}" down -v --remove-orphans >/dev/null 2>&1 || true; }
@@ -47,13 +51,25 @@ wait_for_series() {
   return 1
 }
 
+# http_status URL [curl args...]: prints the HTTP status code of a GET.
+http_status() {
+  local url=$1
+  shift
+  curl -s -o /dev/null -w '%{http_code}' "$@" "$url"
+}
+
+grafana_admin() { http_status "$1" -u "admin:$GRAFANA_ADMIN_PASSWORD"; }
+
 pass() { echo "  ok   $1"; }
 fail() { echo "  FAIL $1"; failures=$((failures + 1)); }
 
 echo "Starting stack..."
-"${COMPOSE[@]}" up -d --quiet-pull >/dev/null 2>&1
+if ! output=$("${COMPOSE[@]}" up -d --quiet-pull 2>&1); then
+  echo "$output"
+  exit 1
+fi
 for _ in $(seq 60); do
-  curl -fs "$PROM_URL/-/ready" >/dev/null 2>&1 && break
+  curl -fs "$PROM_URL/-/ready" >/dev/null 2>&1 && curl -fs "$GRAFANA_URL/api/health" >/dev/null 2>&1 && break
   sleep 1
 done
 
@@ -99,6 +115,34 @@ for device in SMOKE-NO-TOKEN SMOKE-WRONG-TOKEN; do
     pass "Device $device without the shared token is rejected"
   else
     fail "Device $device without the shared token is rejected"
+  fi
+done
+
+if [[ $(grafana_admin "$GRAFANA_URL/api/datasources/uid/prometheus") == 200 ]]; then
+  pass "Grafana has the Prometheus datasource"
+else
+  fail "Grafana has the Prometheus datasource"
+fi
+# Through Grafana's datasource proxy, so this proves Grafana can reach Prometheus.
+if curl -fsG -u "admin:$GRAFANA_ADMIN_PASSWORD" \
+  "$GRAFANA_URL/api/datasources/proxy/uid/prometheus/api/v1/query" \
+  --data-urlencode 'query=count({device_id="SMOKE-COMPANY-ONE"})' 2>/dev/null |
+  jq -e '.data.result[0].value[1] != "0"' >/dev/null 2>&1; then
+  pass "Grafana reads Company Account data from Prometheus"
+else
+  fail "Grafana reads Company Account data from Prometheus"
+fi
+if [[ $(grafana_admin "$GRAFANA_URL/api/dashboards/uid/$DASHBOARD_UID") == 200 ]]; then
+  pass "Grafana loads the usage dashboard"
+else
+  fail "Grafana loads the usage dashboard"
+fi
+for path in "api/dashboards/uid/$DASHBOARD_UID" api/search api/datasources; do
+  status=$(http_status "$GRAFANA_URL/$path")
+  if [[ $status == 401 ]]; then
+    pass "Grafana refuses anonymous access to /$path"
+  else
+    fail "Grafana refuses anonymous access to /$path (got $status)"
   fi
 done
 
