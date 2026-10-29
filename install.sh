@@ -56,6 +56,8 @@ install_settings() {
   # Temp file in the same directory so mv is an atomic rename.
   tmp=$(mktemp "$dir/.managed-settings.XXXXXX")
   trap 'rm -f "$tmp"' EXIT
+  # session.id is left out of metrics: each session would add new Prometheus series, and
+  # usage is reported per Device, not per session.
   printf '%s\n' \
     '{' \
     '  "env": {' \
@@ -66,6 +68,7 @@ install_settings() {
     "    \"OTEL_EXPORTER_OTLP_HEADERS\": \"Authorization=Bearer $token\"," \
     '    "OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE": "cumulative",' \
     '    "OTEL_LOGS_EXPORTER": "none",' \
+    '    "OTEL_METRICS_INCLUDE_SESSION_ID": "false",' \
     "    \"OTEL_RESOURCE_ATTRIBUTES\": \"device.id=$serial,host.name=$hostname\"" \
     '  }' \
     '}' >"$tmp"

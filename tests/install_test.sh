@@ -52,6 +52,7 @@ expected_env() { # expected_env ENDPOINT
     OTEL_EXPORTER_OTLP_HEADERS: ("Authorization=Bearer " + $token),
     OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE: "cumulative",
     OTEL_LOGS_EXPORTER: "none",
+    OTEL_METRICS_INCLUDE_SESSION_ID: "false",
     OTEL_RESOURCE_ATTRIBUTES: ("device.id=" + $serial + ",host.name=" + $host)
   }'
 }
