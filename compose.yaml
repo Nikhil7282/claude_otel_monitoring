@@ -1,0 +1,25 @@
+# Server stack. No service publishes host ports here; compose.test.yaml exposes them
+# on localhost for tests, and the production front door is added separately.
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.120.0
+    volumes:
+      - ./collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=400d
+      - --web.enable-remote-write-receiver
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    restart: unless-stopped
+
+volumes:
+  prometheus-data:

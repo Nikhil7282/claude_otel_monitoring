@@ -1,0 +1,2 @@
+# Push-only: all data arrives from the Collector through remote write, so nothing is scraped.
+global: {}
