@@ -2,9 +2,10 @@
 # on localhost for tests, and the production front door is added separately.
 services:
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.120.0
+    image: otel/opentelemetry-collector-contrib:0.130.0
     environment:
       OTEL_AUTH_TOKEN: ${OTEL_AUTH_TOKEN:?set OTEL_AUTH_TOKEN in .env}
+      COMPANY_ACCOUNTS: ${COMPANY_ACCOUNTS:?set COMPANY_ACCOUNTS in .env}
     volumes:
       - ./collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
     depends_on:

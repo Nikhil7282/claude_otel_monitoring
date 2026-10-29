@@ -1,5 +1,6 @@
-# lint only parses config, so a placeholder token is enough when none is set.
-COMPOSE := OTEL_AUTH_TOKEN=$${OTEL_AUTH_TOKEN:-lint-placeholder} docker compose -f compose.yaml
+# lint only parses config, so placeholders are enough when .env values aren't set.
+COMPOSE := OTEL_AUTH_TOKEN=$${OTEL_AUTH_TOKEN:-lint-placeholder} \
+	COMPANY_ACCOUNTS=$${COMPANY_ACCOUNTS:-lint@example.com} docker compose -f compose.yaml
 SHELLCHECK := docker run --rm -v "$(CURDIR)":/mnt:ro -w /mnt koalaman/shellcheck:v0.10.0
 
 .PHONY: test lint install-test smoke

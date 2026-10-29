@@ -5,7 +5,7 @@ Lets the company see how its Claude Code accounts are used across developer devi
 ## Accounts
 
 **Company Account**:
-A Claude account the company pays for, listed by email in the Company Account allowlist. Starts as `company-two@example.org` and `company-one@example.com`.
+A Claude account the company pays for, listed by email in the Company Account allowlist kept in the server's private settings.
 _Avoid_: Work account, org account
 
 **Personal Account**:

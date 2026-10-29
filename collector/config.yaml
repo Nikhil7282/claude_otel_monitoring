@@ -12,15 +12,14 @@ receivers:
           authenticator: bearertokenauth
 
 processors:
-  # Company Account allowlist. A data point is kept only when user.email exactly matches
-  # one of these addresses; Personal Accounts and data with no email are dropped.
+  # Company Account allowlist from .env (comma-separated, no spaces). A data point is kept
+  # only when user.email exactly matches one entry; Personal Accounts and data with no
+  # email are dropped.
   filter/company-accounts:
     error_mode: propagate
     metrics:
       datapoint:
-        - >-
-          not (attributes["user.email"] == "company-one@example.com"
-          or attributes["user.email"] == "company-two@example.org")
+        - 'not ContainsValue(Split("${env:COMPANY_ACCOUNTS}", ","), attributes["user.email"])'
   batch: {}
 
 exporters:

@@ -6,11 +6,13 @@ cd "$(dirname "$0")/.."
 
 PROJECT=claude-otel-smoke
 COMPOSE=(docker compose -p "$PROJECT" -f compose.yaml -f compose.test.yaml)
-TELEMETRYGEN_IMAGE=ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.120.0
+TELEMETRYGEN_IMAGE=ghcr.io/open-telemetry/opentelemetry-collector-contrib/telemetrygen:v0.130.0
 PROM_URL=http://127.0.0.1:19090
 # Throwaway token so the tests never need the real secret.
 OTEL_AUTH_TOKEN=$(openssl rand -hex 32)
 export OTEL_AUTH_TOKEN
+# Test Company Account allowlist; the real one lives only in the server's .env.
+export COMPANY_ACCOUNTS=company-one@example.com,company-two@example.org
 failures=0
 
 cleanup() { "${COMPOSE[@]}" down -v --remove-orphans >/dev/null 2>&1 || true; }
@@ -68,18 +70,18 @@ send_metric SMOKE-NO-TOKEN company-one@example.com "" || true
 send_metric SMOKE-WRONG-TOKEN company-one@example.com "$(openssl rand -hex 32)" || true
 # Company Account Devices go last: once they are stored, everything sent before
 # them has been through the Collector, so an absent Device was really dropped.
-send_metric SMOKE-COMPANY-COM company-one@example.com
-send_metric SMOKE-COMPANY-ORG company-two@example.org
+send_metric SMOKE-COMPANY-ONE company-one@example.com
+send_metric SMOKE-COMPANY-TWO company-two@example.org
 
 echo "Assertions:"
-for device in SMOKE-COMPANY-COM SMOKE-COMPANY-ORG; do
+for device in SMOKE-COMPANY-ONE SMOKE-COMPANY-TWO; do
   if wait_for_series "{device_id=\"$device\"}"; then
     pass "Company Account Device $device is stored"
   else
     fail "Company Account Device $device is stored"
   fi
 done
-if [[ $(series_count '{device_id="SMOKE-COMPANY-COM", host_name="SMOKE-COMPANY-COM-host", user_email="company-one@example.com"}') != 0 ]]; then
+if [[ $(series_count '{device_id="SMOKE-COMPANY-ONE", host_name="SMOKE-COMPANY-ONE-host", user_email="company-one@example.com"}') != 0 ]]; then
   pass "Device carries device_id, host_name and user_email labels"
 else
   fail "Device carries device_id, host_name and user_email labels"
