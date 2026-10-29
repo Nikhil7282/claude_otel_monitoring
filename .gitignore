@@ -1,0 +1,7 @@
+# Agent-skill configuration (local only)
+CLAUDE.md
+docs/agents/
+.scratch/
+
+# Secrets
+.env
