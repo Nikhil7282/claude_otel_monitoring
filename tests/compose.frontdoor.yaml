@@ -1,0 +1,7 @@
+# Front door test override: Caddy's own CA instead of Let's Encrypt, on a localhost port.
+services:
+  caddy:
+    ports: !override
+      - 127.0.0.1:28443:443
+    environment:
+      CADDY_LOCAL_CERTS: local_certs

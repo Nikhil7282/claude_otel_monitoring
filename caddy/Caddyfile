@@ -1,0 +1,14 @@
+# Two hostnames from one domain. Certificates come from Let's Encrypt automatically;
+# CADDY_LOCAL_CERTS=local_certs switches to Caddy's own CA for local testing.
+{
+	{$CADDY_LOCAL_CERTS}
+}
+
+otel.{$DOMAIN} {
+	# OTLP over gRPC from Devices; the Collector checks the bearer token.
+	reverse_proxy h2c://otel-collector:4317
+}
+
+grafana.{$DOMAIN} {
+	reverse_proxy grafana:3000
+}

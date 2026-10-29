@@ -1,0 +1,37 @@
+# Production override: Caddy is the only service with host ports, and every container
+# has a memory limit so the stack fits a 1 GB instance with swap. Use with
+#   docker compose -f compose.yaml -f compose.prod.yaml up -d
+# or set COMPOSE_FILE=compose.yaml:compose.prod.yaml in .env.
+services:
+  caddy:
+    image: caddy:2.9.1
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+      CADDY_LOCAL_CERTS: ${CADDY_LOCAL_CERTS:-}
+    volumes:
+      - ./caddy:/etc/caddy:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - otel-collector
+      - grafana
+    restart: unless-stopped
+    mem_limit: 64m
+
+  otel-collector:
+    mem_limit: 192m
+
+  prometheus:
+    mem_limit: 384m
+
+  grafana:
+    mem_limit: 256m
+    environment:
+      GF_SERVER_ROOT_URL: https://grafana.${DOMAIN}
+
+volumes:
+  caddy-data:
+  caddy-config:

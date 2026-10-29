@@ -8,7 +8,7 @@ services:
       OTEL_AUTH_TOKEN: ${OTEL_AUTH_TOKEN:?set OTEL_AUTH_TOKEN in .env}
       COMPANY_ACCOUNTS: ${COMPANY_ACCOUNTS:?set COMPANY_ACCOUNTS in .env}
     volumes:
-      - ./collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
+      - ./collector:/etc/otelcol-contrib:ro
     depends_on:
       - prometheus
     restart: unless-stopped
@@ -21,7 +21,7 @@ services:
       - --storage.tsdb.retention.time=400d
       - --web.enable-remote-write-receiver
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus:/etc/prometheus:ro
       - prometheus-data:/prometheus
     restart: unless-stopped
 

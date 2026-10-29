@@ -127,7 +127,7 @@ fi
 if curl -fsG -u "admin:$GRAFANA_ADMIN_PASSWORD" \
   "$GRAFANA_URL/api/datasources/proxy/uid/prometheus/api/v1/query" \
   --data-urlencode 'query=count({device_id="SMOKE-COMPANY-ONE"})' 2>/dev/null |
-  jq -e '.data.result[0].value[1] != "0"' >/dev/null 2>&1; then
+  jq -e '(.data.result[0].value[1] // "0") != "0"' >/dev/null 2>&1; then
   pass "Grafana reads Company Account data from Prometheus"
 else
   fail "Grafana reads Company Account data from Prometheus"
