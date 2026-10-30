@@ -19,6 +19,7 @@ Mac: Claude Code ──OTLP──► Caddy ──► OTel Collector ──► Pr
 | `collector/`, `prometheus/`, `grafana/`, `caddy/` | Service configuration. The dashboard is `grafana/dashboards/claude-code-usage.json`. |
 | `.env.example` | Server settings: token, Company Account allowlist, Grafana password, domain |
 | `docs/deploy.md` | Step-by-step deployment to EC2 and Device onboarding |
+| `docs/onboard-device.md` | Guide to send someone so they can set up their own Mac |
 
 ## Try it locally
 

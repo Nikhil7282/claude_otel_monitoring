@@ -236,6 +236,8 @@ Anonymous access and sign-up are turned off, so no one can see the dashboard wit
 
 ## 9. Onboard a Device
 
+To have someone else set up their own Mac, send them [`onboard-device.md`](onboard-device.md) together with the domain and the token (privately). The steps below are the same, done by you.
+
 Do this on each developer Mac. You need the repo (or just `install.sh`) and the token from `.env`.
 
 ```bash
