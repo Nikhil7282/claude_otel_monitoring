@@ -233,7 +233,7 @@
     {
       "id": 5,
       "type": "stat",
-      "title": "Sessions",
+      "title": "Sessions used",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -250,7 +250,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum((max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "expr": "count(sum by (session_id) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range])) > 0)",
           "refId": "A",
           "format": "time_series",
           "instant": true,
@@ -275,7 +275,8 @@
         "colorMode": "none",
         "graphMode": "none",
         "textMode": "value"
-      }
+      },
+      "description": "Claude Code sessions with at least one model request in the selected range. Windows opened and closed without asking anything are not counted."
     },
     {
       "id": 6,
@@ -391,7 +392,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "expr": "count by (device_id, host_name, user_email) (sum by (device_id, host_name, user_email, session_id) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range])) > 0)",
           "refId": "D",
           "format": "table",
           "instant": true,
@@ -512,7 +513,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Sessions"
+              "options": "Sessions used"
             },
             "properties": [
               {
@@ -628,7 +629,7 @@
           }
         ]
       },
-      "description": "Totals for the selected time range. Last seen is when the Device last reported while Claude Code was running.",
+      "description": "Totals for the selected time range. Sessions used counts sessions with at least one model request; a session switched to another account with /login counts for both accounts. Last seen is when the Device last reported while Claude Code was running.",
       "transformations": [
         {
           "id": "merge",
@@ -644,7 +645,7 @@
               "Value #A": "Est. cost (API)",
               "Value #B": "Tokens",
               "Value #C": "Active time",
-              "Value #D": "Sessions",
+              "Value #D": "Sessions used",
               "Value #E": "Added lines",
               "Value #F": "Removed lines",
               "Value #G": "Commits",
@@ -668,7 +669,7 @@
               "Est. cost (API)": 3,
               "Tokens": 4,
               "Active time": 5,
-              "Sessions": 6,
+              "Sessions used": 6,
               "Added lines": 7,
               "Removed lines": 8,
               "Commits": 9,

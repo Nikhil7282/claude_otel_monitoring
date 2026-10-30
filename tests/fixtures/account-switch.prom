@@ -1,0 +1,11 @@
+# Mirrors a real Device on 2026-10-30: two sessions on company-one, one of them switched
+# to company-two with /login (same session_id), plus three company-two sessions that were
+# started but never used (no cost).
+claude_code_session_count_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-one@example.com",session_id="s-one-a",start_type="fresh"} 1
+claude_code_session_count_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-one@example.com",session_id="s-one-b",start_type="fresh"} 1
+claude_code_session_count_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-two@example.org",session_id="s-empty-1",start_type="fresh"} 1
+claude_code_session_count_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-two@example.org",session_id="s-empty-2",start_type="fresh"} 1
+claude_code_session_count_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-two@example.org",session_id="s-empty-3",start_type="fresh"} 1
+claude_code_cost_usage_USD_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-one@example.com",session_id="s-one-a",model="claude-opus-5-5"} 0.15
+claude_code_cost_usage_USD_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-one@example.com",session_id="s-one-b",model="claude-opus-5-5"} 0.99
+claude_code_cost_usage_USD_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-two@example.org",session_id="s-one-b",model="claude-opus-5-5"} 0.67

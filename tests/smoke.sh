@@ -60,6 +60,22 @@ http_status() {
 
 grafana_admin() { http_status "$1" -u "admin:$GRAFANA_ADMIN_PASSWORD"; }
 
+# panel_query TITLE REFID: a dashboard panel's PromQL with every filter set to All and a
+# 1h range, so panels can be checked against known data.
+# shellcheck disable=SC2016 # $device etc. are literal Grafana variables, not shell expansions
+panel_query() {
+  jq -r --arg title "$1" --arg ref "$2" \
+    '.panels[] | select(.title == $title) | .targets[] | select(.refId == $ref) | .expr' \
+    grafana/dashboards/claude-code-usage.json |
+    sed -e 's/\$device/.*/g' -e 's/\$account/.*/g' -e 's/\$__range/1h/g'
+}
+
+# query_values QUERY: one "user_email value" line per result (just the value if no email).
+query_values() {
+  curl -sG "$PROM_URL/api/v1/query" --data-urlencode "query=$1" |
+    jq -r '.data.result[]? | [(.metric.user_email // empty), .value[1]] | join(" ")' 2>/dev/null | sort || true
+}
+
 pass() { echo "  ok   $1"; }
 fail() { echo "  FAIL $1"; failures=$((failures + 1)); }
 
@@ -88,6 +104,10 @@ send_metric SMOKE-WRONG-TOKEN company-one@example.com "$(openssl rand -hex 32)" 
 # them has been through the Collector, so an absent Device was really dropped.
 send_metric SMOKE-COMPANY-ONE company-one@example.com
 send_metric SMOKE-COMPANY-TWO company-two@example.org
+
+# Real-shaped Claude Code series for dashboard checks, written straight to Prometheus.
+"${COMPOSE[@]}" run --rm --no-deps -v "$PWD/tests/fixtures:/fixtures:ro" --entrypoint promtool \
+  prometheus push metrics http://prometheus:9090/api/v1/write /fixtures/account-switch.prom >/dev/null 2>&1
 
 echo "Assertions:"
 for device in SMOKE-COMPANY-ONE SMOKE-COMPANY-TWO; do
@@ -145,6 +165,19 @@ for path in "api/dashboards/uid/$DASHBOARD_UID" api/search api/datasources; do
     fail "Grafana refuses anonymous access to /$path (got $status)"
   fi
 done
+
+sessions_total=$(query_values "$(panel_query 'Sessions used' A)")
+if [[ $sessions_total == 2 ]]; then
+  pass "Sessions used counts only sessions with model requests"
+else
+  fail "Sessions used counts only sessions with model requests (got '${sessions_total}', want 2)"
+fi
+sessions_per_account=$(query_values "$(panel_query 'Usage per Device' D)" | tr '\n' ';')
+if [[ $sessions_per_account == "company-one@example.com 2;company-two@example.org 1;" ]]; then
+  pass "Sessions used per account follows /login account switches"
+else
+  fail "Sessions used per account follows /login account switches (got '${sessions_per_account}')"
+fi
 
 if ((failures > 0)); then
   echo "$failures assertion(s) failed"
