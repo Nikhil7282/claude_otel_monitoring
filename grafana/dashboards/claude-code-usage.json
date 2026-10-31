@@ -298,7 +298,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "count(sum by (device_id) ((max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range])) > 0)",
+          "expr": "count(sum by (device_id) ((max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\", device_id!=\"\"}[$__range]) - max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\", device_id!=\"\"}[$__range] offset $__range)) or max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\", device_id!=\"\"}[$__range])) > 0)",
           "refId": "A",
           "format": "time_series",
           "instant": true,
@@ -324,7 +324,7 @@
         "graphMode": "none",
         "textMode": "value"
       },
-      "description": "Devices with any active time in the selected range."
+      "description": "Devices with any active time in the selected range. Claude Desktop app usage has no serial number, so it is not counted here."
     },
     {
       "id": 7,
@@ -359,7 +359,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "expr": "sum by (device_id, host_name, user_email) (label_replace(label_join((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "A",
           "format": "table",
           "instant": true,
@@ -370,7 +370,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "expr": "sum by (device_id, host_name, user_email) (label_replace(label_join((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "B",
           "format": "table",
           "instant": true,
@@ -381,7 +381,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "expr": "sum by (device_id, host_name, user_email) (label_replace(label_join((max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "C",
           "format": "table",
           "instant": true,
@@ -392,7 +392,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "count by (device_id, host_name, user_email) (sum by (device_id, host_name, user_email, session_id) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range])) > 0)",
+          "expr": "count by (device_id, host_name, user_email) (sum by (device_id, host_name, user_email, session_id) (label_replace(label_join((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\")) > 0)",
           "refId": "D",
           "format": "table",
           "instant": true,
@@ -403,7 +403,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]))",
+          "expr": "sum by (device_id, host_name, user_email) (label_replace(label_join((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "E",
           "format": "table",
           "instant": true,
@@ -414,7 +414,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]))",
+          "expr": "sum by (device_id, host_name, user_email) (label_replace(label_join((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "F",
           "format": "table",
           "instant": true,
@@ -425,7 +425,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "expr": "sum by (device_id, host_name, user_email) (label_replace(label_join((max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "G",
           "format": "table",
           "instant": true,
@@ -436,7 +436,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "expr": "sum by (device_id, host_name, user_email) (label_replace(label_join((max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "H",
           "format": "table",
           "instant": true,
@@ -447,7 +447,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (device_id, host_name, user_email) ((max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\", decision=\"accept\"}[$__range]) - max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\", decision=\"accept\"}[$__range] offset $__range)) or max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\", decision=\"accept\"}[$__range])) / sum by (device_id, host_name, user_email) ((max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "expr": "sum by (device_id, host_name, user_email) (label_replace(label_join((max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\", decision=\"accept\"}[$__range]) - max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\", decision=\"accept\"}[$__range] offset $__range)) or max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\", decision=\"accept\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\")) / sum by (device_id, host_name, user_email) (label_replace(label_join((max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_code_edit_tool_decision_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "I",
           "format": "table",
           "instant": true,
@@ -458,7 +458,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (device_id, host_name, user_email) (max_over_time(timestamp(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"})[$__range:5m])) * 1000",
+          "expr": "max by (device_id, host_name, user_email) (label_replace(label_join(max_over_time(timestamp(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"})[$__range:5m]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\")) * 1000",
           "refId": "J",
           "format": "table",
           "instant": true,
@@ -629,7 +629,7 @@
           }
         ]
       },
-      "description": "Totals for the selected time range. Sessions used counts sessions with at least one model request; a session switched to another account with /login counts for both accounts. Last seen is when the Device last reported while Claude Code was running.",
+      "description": "Totals for the selected time range. Sessions used counts sessions with at least one model request; a session switched to another account with /login counts for both accounts. Last seen is when the Device last reported while Claude Code was running. Claude Desktop app usage has no serial number or hostname, so it is shown as \"Desktop app (<Mac user name>)\".",
       "transformations": [
         {
           "id": "merge",
@@ -714,7 +714,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (device_id, host_name) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d])) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d))",
+          "expr": "sum by (device_id, host_name) (label_replace(label_join((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d])) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "A",
           "format": "time_series",
           "instant": false,
@@ -819,7 +819,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (host_name) ((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]))",
+          "expr": "sum by (host_name) (label_replace(label_join((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"added\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "A",
           "format": "time_series",
           "instant": true,
@@ -831,7 +831,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (host_name) ((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]))",
+          "expr": "sum by (host_name) (label_replace(label_join((max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]) - max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range] offset $__range)) or max_over_time(claude_code_lines_of_code_count_total{device_id=~\"$device\", user_email=~\"$account\", type=\"removed\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "B",
           "format": "time_series",
           "instant": true,
@@ -887,7 +887,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (host_name) ((max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "expr": "sum by (host_name) (label_replace(label_join((max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "A",
           "format": "time_series",
           "instant": true,
@@ -899,7 +899,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum by (host_name) ((max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range])) or 0 * sum by (host_name) ((max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "expr": "sum by (host_name) (label_replace(label_join((max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_pull_request_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\")) or 0 * sum by (host_name) (label_replace(label_join((max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_commit_count_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "B",
           "format": "time_series",
           "instant": true,

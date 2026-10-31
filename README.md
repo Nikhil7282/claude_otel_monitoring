@@ -21,6 +21,10 @@ Mac: Claude Code ──OTLP──► Caddy ──► OTel Collector ──► Pr
 | `docs/deploy.md` | Step-by-step deployment to EC2 and Device onboarding |
 | `docs/onboard-device.md` | Guide to send someone so they can set up their own Mac |
 
+## Known limit: the Claude Desktop app
+
+The Code tab in the Claude Desktop app sends usage too, but it replaces the Device labels (serial number and hostname) with its own. Nothing in the managed settings can override that. The dashboard shows this usage as **Desktop app (&lt;Mac user name&gt;)**. It counts towards cost, tokens and sessions, but not towards Active Devices.
+
 ## Try it locally
 
 ```bash

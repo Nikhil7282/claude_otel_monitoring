@@ -58,6 +58,8 @@ The last line should say **`Endpoint otel.<server-domain>:443 is reachable`**. T
 2. Run `claude` and use it normally for a few minutes. Make sure you're signed in to the company account; `/status` shows which account is active.
 3. After about 2 minutes, your Mac appears on the dashboard (`https://grafana.<server-domain>`) in the **Usage per Device** table.
 
+**Using the Claude Desktop app?** Its Code tab reports too, but the app replaces the Device labels with its own. It shows up as **Desktop app (&lt;your Mac user name&gt;)** instead of under your Mac's name.
+
 ## Remove it
 
 ```bash

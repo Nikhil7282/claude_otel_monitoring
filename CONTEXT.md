@@ -18,6 +18,9 @@ _Avoid_: Private account
 One developer Mac that has the monitoring rollout installed, identified by its hardware serial number. The main unit for reporting usage; its hostname is only a display label.
 _Avoid_: Machine, host, laptop
 
+**Desktop App Usage**:
+Usage from the Code tab of the Claude Desktop app. It can't carry a Device's serial number or hostname, so it is reported under the Mac's user name instead and isn't counted as a Device.
+
 **Developer Mapping**:
 An optional link from a Device to the person who uses it, added only when per-person reporting is needed.
 _Avoid_: User mapping, owner
