@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Prints the nginx site for the monitoring stack, filled in from claude-otel.conf.template.
 # Usage: nginx/render.sh DOMAIN COLLECTOR_UPSTREAM GRAFANA_UPSTREAM CERT_DIR
-#   e.g. nginx/render.sh 72-61-196-129.sslip.io 127.0.0.1:14317 127.0.0.1:13000 \
+#   e.g. nginx/render.sh claude.example.com 127.0.0.1:14317 127.0.0.1:13000 \
 #          /etc/letsencrypt/live/claude-otel
 set -euo pipefail
 

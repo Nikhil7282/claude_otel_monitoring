@@ -15,7 +15,9 @@ Manager's browser ─────────────HTTPS──────
 
 The other sites are never edited. The new site is a separate file, and every change is checked with `nginx -t` before a **graceful reload**, which doesn't drop connections. On an empty server with nothing on 80/443, use Caddy instead ([`deploy.md`](deploy.md)).
 
-The steps use `<VPS_IP>` for the server's IPv4 address. For `72.61.196.129`, `DOMAIN` is `72-61-196-129.sslip.io` ([sslip.io](https://sslip.io): the IP with dashes). All commands run as root on the server.
+The steps use `<VPS_IP>` for the server's IPv4 address. All commands run as root on the server.
+
+`DOMAIN` should be a subdomain of the company domain, for example `claude.example.com`. At the DNS provider, add two **A records**, `otel.<DOMAIN>` and `grafana.<DOMAIN>`, both pointing to `<VPS_IP>`, with a short TTL (300 seconds). On Cloudflare, set them to **DNS only** (grey cloud): the Devices' gRPC traffic must reach nginx directly. Devices only know the hostnames, so moving the server later means changing the two records, not re-running the install script on every Mac. (Without a domain, [sslip.io](https://sslip.io) works too: `DOMAIN` is the IP with dashes, like `72-61-196-129.sslip.io`. But then a new IP means a new `DOMAIN` on every Mac.)
 
 ## 1. Check the server
 
@@ -36,7 +38,7 @@ cd ~/claude_otel_monitoring
 
 cat > .env <<EOF
 COMPOSE_FILE=compose.yaml:compose.nginx.yaml
-DOMAIN=72-61-196-129.sslip.io
+DOMAIN=claude.example.com    # see above
 OTEL_AUTH_TOKEN=$(openssl rand -hex 32)
 COMPANY_ACCOUNTS=first@yourcompany.com,second@yourcompany.com    # the real Company Accounts
 GRAFANA_ADMIN_PASSWORD=$(openssl rand -hex 16)
@@ -102,6 +104,8 @@ Commands run in `~/claude_otel_monitoring`.
 |---|---|
 | **Update to the latest code** | `git pull && docker compose up -d` |
 | **Change the nginx site** (after the template changes) | Re-run the `render.sh` line from step 5, then `nginx -t && systemctl reload nginx` |
+| **Change `DOMAIN`** | Add the new A records, set `DOMAIN` in `.env`, `docker compose up -d`, re-run the certbot command from step 4 with the new names (same `--cert-name`, add `--non-interactive`), then the `render.sh` line from step 5. Re-run the install script on each Mac with the new `DOMAIN`. |
+| **Move to another server** | Set up the stack there with the old `.env` (same token and `DOMAIN`), restore the Docker volumes if you want the history, and point the two A records at the new IP. Then get the certificate (step 4): Let's Encrypt checks the name on the new server. No Mac changes. |
 | **Add a Company Account** or **rotate the token** | Same as [EC2](deploy.md#day-to-day-operations) |
 | **Check the certificate** | `certbot certificates --cert-name claude-otel` |
 | **Remove the whole stack** | `rm /etc/nginx/sites-enabled/claude-otel && nginx -t && systemctl reload nginx`, then `docker compose down` (add `-v` to delete the data too) |
