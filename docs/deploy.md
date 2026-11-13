@@ -1,6 +1,6 @@
 # Deploying to AWS EC2
 
-This runbook covers putting the monitoring server on one EC2 instance and onboarding Devices. Read [`CONTEXT.md`](../CONTEXT.md) for the terms (Device, Company Account). Read [ADR-0001](adr/0001-telemetry-not-api-proxy.md) for why this is telemetry rather than a proxy.
+This runbook covers putting the monitoring server on one EC2 instance and onboarding Devices. For a Hostinger VPS, follow [`deploy-hostinger.md`](deploy-hostinger.md) instead; it links back here for the shared steps. Read [`CONTEXT.md`](../CONTEXT.md) for the terms (Device, Company Account). Read [ADR-0001](adr/0001-telemetry-not-api-proxy.md) for why this is telemetry rather than a proxy.
 
 ```
 Developer Mac (Claude Code) ──OTLP/gRPC over TLS──► otel.<domain>:443 ─┐
