@@ -1,0 +1,13 @@
+# Front door test for the nginx setup: a stand-in for the server's nginx (same version as
+# the Hostinger VPS) with a self-signed certificate, on a localhost port.
+services:
+  nginx:
+    image: nginx:1.18.0
+    ports:
+      - 127.0.0.1:28444:443
+    volumes:
+      - ${NGINX_TEST_DIR:?set by tests/frontdoor-nginx.sh}/conf.d:/etc/nginx/conf.d:ro
+      - ${NGINX_TEST_DIR:?set by tests/frontdoor-nginx.sh}/certs:/certs:ro
+    depends_on:
+      - otel-collector
+      - grafana

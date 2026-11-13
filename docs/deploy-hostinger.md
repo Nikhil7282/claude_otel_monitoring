@@ -1,102 +1,111 @@
-# Deploying to a Hostinger VPS
+# Deploying to the Hostinger VPS (behind its nginx)
 
-This runbook puts the monitoring server on one Hostinger VPS. The stack is the same as on EC2 ([`deploy.md`](deploy.md)); only the server setup differs. Read [`CONTEXT.md`](../CONTEXT.md) for the terms (Device, Company Account).
+The company's Hostinger VPS already runs other apps, and its nginx owns ports 80 and 443. So the monitoring stack runs **behind that nginx** instead of bringing its own Caddy:
 
 ```
 Developer Mac (Claude Code) ──OTLP/gRPC over TLS──► otel.<domain>:443 ─┐
-Manager's browser ─────────────HTTPS─────────────► grafana.<domain>:443 ┤ Caddy (only public service)
+Manager's browser ─────────────HTTPS─────────────► grafana.<domain>:443 ┤ the server's nginx (+ certbot)
                                                                        ▼
-                                   OTel Collector ──► Prometheus ◄── Grafana   (internal Docker network)
+                    127.0.0.1:14317 → OTel Collector ──► Prometheus ◄── Grafana ← 127.0.0.1:13000
 ```
 
-Any Hostinger KVM plan is enough. The stack needs under 1 GB of memory, and the smallest plan has 4 GB, so no swap is needed.
+- `compose.nginx.yaml` publishes the Collector and Grafana on **localhost-only** ports. Prometheus isn't published at all.
+- `nginx/claude-otel.conf.template` is one extra nginx site. It terminates TLS for the two hostnames. It sends gRPC to the Collector and the web traffic to Grafana.
+- certbot issues and renews the certificate, the same way it does for the other sites on the server.
 
-The steps use `<VPS_IP>` for the VPS's IPv4 address and `DOMAIN` for the hostname base from step 2.
+The other sites are never edited. The new site is a separate file, and every change is checked with `nginx -t` before a **graceful reload**, which doesn't drop connections. On an empty server with nothing on 80/443, use Caddy instead ([`deploy.md`](deploy.md)).
 
-## 1. Prepare the VPS in hPanel
+The steps use `<VPS_IP>` for the server's IPv4 address. For `72.61.196.129`, `DOMAIN` is `72-61-196-129.sslip.io` ([sslip.io](https://sslip.io): the IP with dashes). All commands run as root on the server.
 
-1. Open **hPanel → VPS → your server**. The **Overview** page shows the IPv4 address. That is `<VPS_IP>`.
-2. **Operating system:** use **Ubuntu 24.04** (plain, or the "with Docker" template). Changing the OS wipes the VPS, so do it before anything else.
-3. **SSH key:** under **Settings → SSH keys**, add your Mac's public key (`cat ~/.ssh/id_ed25519.pub`). Then you log in with the key instead of the root password.
-4. **Firewall:** under **Security → Firewall**, create a configuration with these **accept** rules, then activate it for this VPS:
-
-   | Protocol | Port | Source | Why |
-   |---|---|---|---|
-   | TCP | 22 | your IP (or any, if your IP changes often) | SSH |
-   | TCP | 80 | any | Let's Encrypt certificate checks, redirect to HTTPS |
-   | TCP | 443 | any | Devices sending usage, and the Grafana website |
-
-   Nothing else is needed. Prometheus (9090), Grafana (3000) and the Collector (4317) are never published by Docker, so they stay private even without these rules.
-
-## 2. Hostnames
-
-Without a domain, use [sslip.io](https://sslip.io): write the IP with dashes and add `.sslip.io`.
-
-```
-VPS IP:     82.25.10.7
-DOMAIN:     82-25-10-7.sslip.io
-Hostnames:  otel.82-25-10-7.sslip.io and grafana.82-25-10-7.sslip.io  → 82.25.10.7
-```
-
-With your own domain, create A records for `otel.<domain>` and `grafana.<domain>` pointing to `<VPS_IP>` instead. [`deploy.md` step 3](deploy.md#3-hostnames) has the details and trade-offs.
-
-The hostnames contain the IP, so they stay valid as long as the VPS keeps its IP. A new IP means a new DOMAIN and re-running the install script on every Mac.
-
-## 3. Install Docker
+## 1. Check the server
 
 ```bash
 ssh root@<VPS_IP>
-
-# Skip if you picked the "with Docker" template.
-curl -fsSL https://get.docker.com | sh
-
-docker version && docker compose version
-ss -tlnp | grep -E ':(80|443)\b'   # must print nothing: Caddy needs both ports
+docker version && docker compose version       # Docker is already installed
+nginx -v && certbot --version                   # nginx and certbot are already installed
+ss -tlnp | grep -E ':(14317|13000)\b'          # must print nothing: the stack's localhost ports
 ```
 
-## 4. Get the code and write `.env`
+The hPanel firewall must allow TCP 80 and 443. It already does, for the other sites.
+
+## 2. Get the code and write `.env`
 
 ```bash
-git clone https://github.com/Nikhil7282/claude_otel_monitoring.git
-cd claude_otel_monitoring
+git clone https://github.com/Nikhil7282/claude_otel_monitoring.git ~/claude_otel_monitoring
+cd ~/claude_otel_monitoring
 
 cat > .env <<EOF
-COMPOSE_FILE=compose.yaml:compose.prod.yaml
-DOMAIN=82-25-10-7.sslip.io    # your value from step 2
+COMPOSE_FILE=compose.yaml:compose.nginx.yaml
+DOMAIN=72-61-196-129.sslip.io
 OTEL_AUTH_TOKEN=$(openssl rand -hex 32)
 COMPANY_ACCOUNTS=first@yourcompany.com,second@yourcompany.com    # the real Company Accounts
 GRAFANA_ADMIN_PASSWORD=$(openssl rand -hex 16)
 EOF
 chmod 600 .env
-cat .env   # copy OTEL_AUTH_TOKEN and GRAFANA_ADMIN_PASSWORD into your password manager
 ```
 
-`COMPANY_ACCOUNTS` must be comma-separated with **no spaces**. `.env` is git-ignored and is the only place the token, the password and the company emails live.
+`COMPANY_ACCOUNTS` must be comma-separated with **no spaces**. `.env` is git-ignored and is the only place the token, the password and the company emails live. Copy `OTEL_AUTH_TOKEN` and `GRAFANA_ADMIN_PASSWORD` into your password manager.
 
-## 5. Start the stack
+## 3. Start the stack
 
 ```bash
 docker compose up -d
-docker compose ps                                    # caddy, otel-collector, prometheus, grafana: running
-docker compose logs caddy | grep -i "certificate obtained"
+docker compose ps                               # otel-collector, prometheus, grafana: running
+curl -s http://127.0.0.1:13000/api/health      # {"database":"ok",...}
 ```
 
-Two "certificate obtained successfully" lines mean TLS is ready. Then, from your Mac:
+## 4. Get the certificate
+
+One certificate covers both hostnames. certbot's nginx plugin answers the Let's Encrypt check on port 80 by itself:
 
 ```bash
-curl -s https://grafana.<DOMAIN>/api/health   # {"database":"ok",...}
-nc -vz -w 3 <VPS_IP> 9090                      # must FAIL
-nc -vz -w 3 <VPS_IP> 4317                      # must FAIL
+. ./.env
+certbot certonly --nginx --cert-name claude-otel \
+  -d "otel.$DOMAIN" -d "grafana.$DOMAIN" \
+  --deploy-hook "systemctl reload nginx"
 ```
 
-## 6. Grafana access, Devices and day-to-day
+The `--deploy-hook` makes nginx load the new certificate after each automatic renewal. The existing `certbot.timer` runs the renewals.
+
+## 5. Add the nginx site
+
+```bash
+nginx/render.sh "$DOMAIN" 127.0.0.1:14317 127.0.0.1:13000 /etc/letsencrypt/live/claude-otel \
+  > /etc/nginx/sites-available/claude-otel
+ln -s /etc/nginx/sites-available/claude-otel /etc/nginx/sites-enabled/claude-otel
+nginx -t && systemctl reload nginx
+```
+
+If `nginx -t` fails, nginx keeps running with the old configuration. Remove the link (`rm /etc/nginx/sites-enabled/claude-otel`) and check the error.
+
+From your Mac:
+
+```bash
+curl -s https://grafana.<DOMAIN>/api/health    # {"database":"ok",...}
+nc -vz -w 3 <VPS_IP> 13000                      # must FAIL (localhost only)
+nc -vz -w 3 <VPS_IP> 14317                      # must FAIL (localhost only)
+nc -vz -w 3 <VPS_IP> 9090                       # must FAIL (never published)
+```
+
+## 6. Grafana access and Devices
 
 These are the same as on EC2:
 
 - [Set up Grafana access](deploy.md#8-set-up-grafana-access): the manager's Viewer account.
-- [Onboard a Device](deploy.md#9-onboard-a-device): run the install script on each Mac with the new token and DOMAIN, then restart every running Claude Code session.
-- [Day-to-day operations](deploy.md#day-to-day-operations): run the commands in `~/claude_otel_monitoring`.
+- [Onboard a Device](deploy.md#9-onboard-a-device): run the install script on each Mac with the token and DOMAIN, then restart every running Claude Code session.
 
-## 7. Backups
+## Day-to-day operations
 
-All data (Prometheus metrics, Grafana users) lives in Docker volumes on the VPS disk. In hPanel, under **Backups**, check that weekly automatic backups are on. Before risky changes, take a manual **snapshot** there too. Restoring a backup or snapshot brings the whole VPS back, and the stack starts on its own (`restart: unless-stopped`).
+Commands run in `~/claude_otel_monitoring`.
+
+| Task | Steps |
+|---|---|
+| **Update to the latest code** | `git pull && docker compose up -d` |
+| **Change the nginx site** (after the template changes) | Re-run the `render.sh` line from step 5, then `nginx -t && systemctl reload nginx` |
+| **Add a Company Account** or **rotate the token** | Same as [EC2](deploy.md#day-to-day-operations) |
+| **Check the certificate** | `certbot certificates --cert-name claude-otel` |
+| **Remove the whole stack** | `rm /etc/nginx/sites-enabled/claude-otel && nginx -t && systemctl reload nginx`, then `docker compose down` (add `-v` to delete the data too) |
+
+## Backups
+
+All data (Prometheus metrics, Grafana users) lives in Docker volumes on the VPS disk. In hPanel, under **Backups**, check that weekly automatic backups are on. They cover the whole VPS, including the other apps.

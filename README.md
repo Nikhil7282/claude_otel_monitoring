@@ -15,10 +15,11 @@ Mac: Claude Code ──OTLP──► Caddy ──► OTel Collector ──► Pr
 | `install.sh` | Sets up a Mac as a Device (writes Claude Code's managed settings) |
 | `compose.yaml` | Collector, Prometheus (400-day retention) and Grafana. No public ports. |
 | `compose.prod.yaml` | Adds Caddy (TLS, the only public service) and memory limits |
+| `compose.nginx.yaml`, `nginx/` | Alternative to Caddy for a server that already runs nginx: localhost-only ports and an nginx site template |
 | `compose.local.yaml` | Exposes the stack on localhost for trying it on a laptop |
 | `collector/`, `prometheus/`, `grafana/`, `caddy/` | Service configuration. The dashboard is `grafana/dashboards/claude-code-usage.json`. |
 | `.env.example` | Server settings: token, Company Account allowlist, Grafana password, domain |
-| `docs/deploy-hostinger.md` | Step-by-step deployment to a Hostinger VPS (the current server) |
+| `docs/deploy-hostinger.md` | Step-by-step deployment behind an existing nginx (the current Hostinger server) |
 | `docs/deploy.md` | Step-by-step deployment to EC2 and Device onboarding |
 | `docs/onboard-device.md` | Guide to send someone so they can set up their own Mac |
 
@@ -42,9 +43,10 @@ Grafana is at http://127.0.0.1:13000 (user `admin`).
 make test
 ```
 
-This runs four things, all in Docker:
+This runs five things, all in Docker:
 
 - **Config checks:** Collector, Prometheus, Caddy, shellcheck and the dashboard JSON.
 - **Setup script tests:** the install script's own tests.
 - **Smoke test:** Company Accounts are stored, Personal Accounts are dropped, data without the token is rejected, and Grafana is locked down.
 - **Front-door test:** TLS through Caddy works, and only Caddy is exposed.
+- **nginx front-door test:** the same through the nginx site, and the stack itself listens on localhost only.

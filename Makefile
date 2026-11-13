@@ -4,14 +4,14 @@ COMPOSE := OTEL_AUTH_TOKEN=$${OTEL_AUTH_TOKEN:-lint-placeholder} \
 	GRAFANA_ADMIN_PASSWORD=$${GRAFANA_ADMIN_PASSWORD:-lint-placeholder} docker compose -f compose.yaml
 SHELLCHECK := docker run --rm -v "$(CURDIR)":/mnt:ro -w /mnt koalaman/shellcheck:v0.10.0
 
-.PHONY: test lint install-test smoke frontdoor
+.PHONY: test lint install-test smoke frontdoor frontdoor-nginx
 
-test: lint install-test smoke frontdoor
+test: lint install-test smoke frontdoor frontdoor-nginx
 
 lint:
 	$(COMPOSE) run --rm --no-deps otel-collector validate --config=/etc/otelcol-contrib/config.yaml
 	$(COMPOSE) run --rm --no-deps --entrypoint promtool prometheus check config /etc/prometheus/prometheus.yml
-	$(SHELLCHECK) install.sh tests/*.sh
+	$(SHELLCHECK) install.sh tests/*.sh nginx/*.sh
 	jq empty grafana/dashboards/*.json
 	DOMAIN=example.com $(COMPOSE) -f compose.prod.yaml run --rm --no-deps caddy caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile
 
@@ -23,3 +23,6 @@ smoke:
 
 frontdoor:
 	tests/frontdoor.sh
+
+frontdoor-nginx:
+	tests/frontdoor-nginx.sh
