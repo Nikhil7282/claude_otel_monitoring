@@ -22,7 +22,7 @@ Words used below: a **Device** is one developer computer (Mac or Windows PC) wit
 | Runs on | One Ubuntu VM with Docker Compose, on any provider: AWS EC2, Azure, Hostinger, … | Your cluster, in its own namespace |
 | Front door | The VM's nginx, certificate from certbot | Your ingress-nginx, certificate from cert-manager |
 | Cost | A 2 GB VM (or 1 GB with swap) | A few hundred MB of cluster memory, 11 GB of volumes |
-| Steps | [Single VM](#single-vm) | Kubernetes cluster *(next section)* |
+| Steps | [Single VM](#single-vm) | [Kubernetes cluster](#kubernetes-cluster) |
 
 Don't create a cluster just for this. The stack is one Prometheus with local storage, so a cluster adds parts and cost without making it more available ([ADR-0002](docs/adr/0002-nginx-is-the-only-front-door.md)).
 
@@ -251,6 +251,83 @@ The server is done. Next: [onboard Devices](#onboard-devices).
 
 ---
 
+## Kubernetes cluster
+
+For teams that already run a cluster. Everything goes into its own namespace, `claude-otel`, and only two Ingresses are exposed. The manifests are in `k8s/`; the `kustomization.yaml` at the repo root builds the ConfigMaps from the same `collector/`, `prometheus/` and `grafana/` files the VM uses, so the two paths never drift.
+
+### 1. Check the cluster has what it needs
+
+```bash
+kubectl version                                  # client 1.27 or newer (built-in Kustomize 5)
+kubectl get ingressclass                         # a class named "nginx" (ingress-nginx)
+kubectl get clusterissuer                        # a cert-manager ClusterIssuer, e.g. letsencrypt-prod
+kubectl get storageclass                         # one marked "(default)"
+```
+
+- **ingress-nginx** terminates TLS and talks gRPC to the Collector (`nginx.ingress.kubernetes.io/backend-protocol: GRPC`).
+- **cert-manager** issues one certificate per hostname with your ClusterIssuer. A Let's Encrypt issuer with an HTTP-01 solver on the `nginx` class works out of the box.
+- **A default StorageClass** gives Prometheus 10 GiB and Grafana 1 GiB.
+
+> **ingress-nginx was retired in March 2026** and no longer gets security fixes. Many clusters still run it, which is why it's the default here. On another controller, edit `k8s/ingress.yaml`: set `ingressClassName`, and replace the `backend-protocol: GRPC` annotation with your controller's way of saying "the backend speaks gRPC" (F5 NGINX Ingress Controller: `nginx.org/grpc-services: otel-collector`; AWS Load Balancer Controller: `alb.ingress.kubernetes.io/backend-protocol-version: GRPC`, with an ACM certificate instead of cert-manager). On Gateway API, write a `GRPCRoute` to the `otel-collector` Service (port 4317) and an `HTTPRoute` to `grafana` (port 3000) instead. Either way, the gRPC hop needs HTTP/2.
+
+### 2. Get the code and write the two settings files
+
+```bash
+git clone https://github.com/Nikhil7282/claude_otel_monitoring.git
+cd claude_otel_monitoring
+cp k8s/settings.env.example k8s/settings.env     # set DOMAIN and CLUSTER_ISSUER
+```
+
+Then `.env`, the same file the VM path uses (change `COMPANY_ACCOUNTS` first):
+
+```bash
+cat > .env <<EOF
+OTEL_AUTH_TOKEN=$(openssl rand -hex 32)
+COMPANY_ACCOUNTS=first@yourcompany.com,second@yourcompany.com
+GRAFANA_ADMIN_PASSWORD=$(openssl rand -hex 16)
+EOF
+chmod 600 .env
+```
+
+Both files are git-ignored. `.env` becomes the `claude-otel` Secret. The same rules apply: no spaces in `COMPANY_ACCOUNTS`, and no comments after a value (Kustomize reads values literally).
+
+### 3. Point your domain at the ingress
+
+Find the ingress controller's external address:
+
+```bash
+kubectl -n ingress-nginx get svc ingress-nginx-controller     # the EXTERNAL-IP column (names can differ per install)
+```
+
+At your DNS provider, add `otel.<DOMAIN>` and `grafana.<DOMAIN>`:
+
+- **an IP address** (AKS, GKE, most bare-metal load balancers) → two **A records** to that IP
+- **a hostname** such as `a1b2….elb.amazonaws.com` (EKS) → two **CNAME records** to that hostname
+
+On Cloudflare, **DNS only** (grey cloud), as on the VM. Check with `dig +short otel.<DOMAIN> grafana.<DOMAIN>`.
+
+### 4. Deploy
+
+```bash
+kubectl apply -k .
+```
+
+### 5. Check it
+
+```bash
+kubectl -n claude-otel get pods                  # otel-collector, prometheus-0, grafana: Running, Ready
+kubectl -n claude-otel get certificate           # otel-collector-tls, grafana-tls: READY True (can take a minute)
+curl -s https://grafana.<DOMAIN>/api/health      # {"database":"ok",...}
+```
+
+If a certificate stays not ready, `kubectl -n claude-otel describe certificate` and `kubectl -n claude-otel get challenges` show why (usually DNS that isn't live yet).
+
+Then [set up Grafana access](#9-set-up-grafana-access) exactly as on the VM, and [onboard Devices](#onboard-devices).
+
+**Backups** are up to your cluster's own tooling: volume snapshots of the `data-prometheus-0` and `grafana-data` PVCs, or Velero.
+
+---
+
 ## Onboard Devices
 
 Do this on each developer computer, or send the person [`docs/onboard-device.md`](docs/onboard-device.md) together with `DOMAIN` and the token (privately). The guide has the full steps, the safe way to type the token, and troubleshooting.
@@ -293,21 +370,23 @@ Both scripts write Claude Code's **managed settings** file, which developers can
 
 ## Day-to-day operations
 
-On the VM, commands run in `~/claude_otel_monitoring`.
+On the VM, commands run in `~/claude_otel_monitoring`. On Kubernetes, they run in your clone of the repo, and every change is "edit a file, then `kubectl apply -k .`": the ConfigMap and Secret names change with their content, so the pods restart with the new values by themselves.
 
-| Task | Single VM |
-|---|---|
-| **Add a Company Account** | Add the email to `COMPANY_ACCOUNTS` in `.env` (comma, no spaces), then `docker compose up -d`. The Collector restarts with the new list. |
-| **Rotate the token** | Put a new `openssl rand -hex 32` in `.env`, `docker compose up -d`, then re-run the setup script with the new token on every Device. Each Device stops reporting until it's updated. |
-| **Update to the latest code** | `git pull && docker compose up -d`. If `nginx/` changed, re-run the `render.sh` line from step 7, then `sudo nginx -t && sudo systemctl reload nginx`. |
-| **View logs** | `docker compose logs -f otel-collector` (or `prometheus`, `grafana`) |
-| **Check the certificate** | `sudo certbot certificates --cert-name claude-otel` |
-| **Change `DOMAIN`** | Add the new A records, set `DOMAIN` in `.env`, `docker compose up -d`, re-run the certbot command from step 6 with the new names (same `--cert-name`), then the `render.sh` line from step 7. Re-run the setup script on each Device with the new domain. |
-| **Move to another server** | Set up the new VM with the old `.env` (same token and `DOMAIN`), copy the Docker volumes over if you want the history, point the two A records at the new IP, then get the certificate (step 6). No Device changes. |
-| **Remove a Device** | On the Mac: `sudo ./mac_install.sh --uninstall`. On Windows: `.\windows_install.ps1 -Uninstall`. Its history stays on the dashboard. |
-| **Find a silent Device** | The **Active Devices** tile counts silent Devices; sort the per-Device table by **Last seen**. |
-| **Remove the whole stack** | `sudo rm /etc/nginx/sites-enabled/claude-otel && sudo nginx -t && sudo systemctl reload nginx`, then `docker compose down` (add `-v` to delete the data too). |
-| **Backups** | All data (Prometheus metrics, Grafana users) is in Docker volumes on the VM's disk. Use your provider's disk snapshots or backups (step 1). |
+| Task | Single VM | Kubernetes |
+|---|---|---|
+| **Add a Company Account** | Add the email to `COMPANY_ACCOUNTS` in `.env` (comma, no spaces), then `docker compose up -d`. | The same edit to `.env`, then `kubectl apply -k .` |
+| **Rotate the token** | A new `openssl rand -hex 32` in `.env`, `docker compose up -d` | The same edit, `kubectl apply -k .` |
+| **Update to the latest code** | `git pull && docker compose up -d`. If `nginx/` changed, re-run the `render.sh` line from step 7, then `sudo nginx -t && sudo systemctl reload nginx`. | `git pull && kubectl apply -k .` |
+| **View logs** | `docker compose logs -f otel-collector` (or `prometheus`, `grafana`) | `kubectl -n claude-otel logs -f deploy/otel-collector` (or `statefulset/prometheus`, `deploy/grafana`) |
+| **Check the certificate** | `sudo certbot certificates --cert-name claude-otel` | `kubectl -n claude-otel get certificate` |
+| **Change `DOMAIN`** | New A records, `DOMAIN` in `.env`, `docker compose up -d`, the certbot command from step 6 with the new names (same `--cert-name`), then the `render.sh` line from step 7 | New DNS records, `DOMAIN` in `k8s/settings.env`, `kubectl apply -k .` |
+| **Move to another server** | Set up the new VM with the old `.env` (same token and `DOMAIN`), copy the Docker volumes if you want the history, point the two A records at the new IP, then get the certificate (step 6). No Device changes. | Apply to the new cluster with the same two files, restore the PVCs if you want the history, point the DNS records at the new ingress. No Device changes. |
+| **Remove a Device** | On the Mac: `sudo ./mac_install.sh --uninstall`. On Windows: `.\windows_install.ps1 -Uninstall`. Its history stays on the dashboard. | Same |
+| **Find a silent Device** | The **Active Devices** tile counts silent Devices; sort the per-Device table by **Last seen**. | Same |
+| **Remove everything** | `sudo rm /etc/nginx/sites-enabled/claude-otel && sudo nginx -t && sudo systemctl reload nginx`, then `docker compose down` (add `-v` to delete the data too) | `kubectl delete -k .` (this deletes the namespace, so the data goes too) |
+| **Backups** | Your provider's disk snapshots or backups (step 1). All data is in Docker volumes on the VM's disk. | Your cluster's volume snapshots or Velero |
+
+After rotating the token or changing `DOMAIN`, re-run the setup script on every Device with the new value. Each Device stops reporting until it's updated.
 
 ## Known limit: the Claude Desktop app
 
@@ -335,6 +414,9 @@ This runs, all in Docker:
 - **Setup script tests:** the Mac script's tests, and the Windows script's Pester tests in a PowerShell container (including a check that both write the same settings).
 - **Smoke test:** Company Accounts are stored, Personal Accounts are dropped, data without the token is rejected, Grafana is locked down, and the dashboard's queries give the right numbers on known data.
 - **Front-door test:** OTLP over TLS and Grafana over HTTPS work through the nginx site, and the stack itself listens on localhost only.
+- **Kubernetes checks:** the kustomization renders, is valid against the Kubernetes schemas, uses the same config files as Compose, and exposes nothing but the two Ingresses.
+
+`make test-k8s` runs the Kubernetes path end to end in a throwaway [kind](https://kind.sigs.k8s.io) cluster with ingress-nginx and cert-manager: OTLP over TLS through the Ingress, Company Account kept, Personal Account dropped. It takes a few minutes, so it isn't part of `make test`; run it when you change `k8s/` or `kustomization.yaml`. It needs `kubectl`, and downloads `kind` if it isn't installed.
 
 ## What's in the repo
 
@@ -343,6 +425,7 @@ This runs, all in Docker:
 | `mac_install.sh`, `windows_install.ps1` | Device setup for a Mac and a Windows PC (write Claude Code's managed settings) |
 | `compose.yaml` | Collector, Prometheus (400-day retention) and Grafana. No published ports. |
 | `compose.nginx.yaml`, `nginx/` | Production on a VM: localhost-only ports, memory limits and the nginx site template |
+| `kustomization.yaml`, `k8s/` | The Kubernetes path: manifests, Ingresses and the settings example |
 | `compose.local.yaml` | Exposes the stack on localhost for trying it on a laptop |
 | `collector/`, `prometheus/`, `grafana/` | Service configuration. The dashboard is `grafana/dashboards/claude-code-usage.json`. |
 | `.env.example` | Server settings: domain, token, Company Account allowlist, Grafana password |
