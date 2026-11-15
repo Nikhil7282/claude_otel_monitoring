@@ -1,6 +1,6 @@
-# Server stack. No service publishes host ports here; compose.local.yaml and
-# tests/compose.smoke.yaml expose them on localhost, and the production front door is
-# added separately.
+# Server stack. No service publishes host ports here. compose.nginx.yaml (production,
+# behind the host's nginx), compose.local.yaml and tests/compose.smoke.yaml expose them on
+# localhost only.
 services:
   otel-collector:
     image: otel/opentelemetry-collector-contrib:0.130.0

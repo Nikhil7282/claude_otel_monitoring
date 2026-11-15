@@ -5,7 +5,7 @@ Shows how the company's Claude Code accounts are used on each developer Mac: est
 The data comes from Claude Code's built-in OpenTelemetry export, so nothing sits between Claude Code and Anthropic. [ADR-0001](docs/adr/0001-telemetry-not-api-proxy.md) explains why this isn't a proxy. Usage from personal Claude accounts is dropped when it arrives and never stored.
 
 ```
-Mac: Claude Code ──OTLP──► Caddy ──► OTel Collector ──► Prometheus ◄── Grafana ◄── Caddy ◄── browser
+Mac: Claude Code ──OTLP──► nginx ──► OTel Collector ──► Prometheus ◄── Grafana ◄── nginx ◄── browser
                                      (token check +
                                       Company Account filter)
 ```
@@ -14,10 +14,9 @@ Mac: Claude Code ──OTLP──► Caddy ──► OTel Collector ──► Pr
 |---|---|
 | `mac_install.sh` | Sets up a Mac as a Device (writes Claude Code's managed settings) |
 | `compose.yaml` | Collector, Prometheus (400-day retention) and Grafana. No public ports. |
-| `compose.prod.yaml` | Adds Caddy (TLS, the only public service) and memory limits |
-| `compose.nginx.yaml`, `nginx/` | Alternative to Caddy for a server that already runs nginx: localhost-only ports and an nginx site template |
+| `compose.nginx.yaml`, `nginx/` | Production setup behind the server's nginx (the only front door, [ADR-0002](docs/adr/0002-nginx-is-the-only-front-door.md)): localhost-only ports, memory limits and an nginx site template |
 | `compose.local.yaml` | Exposes the stack on localhost for trying it on a laptop |
-| `collector/`, `prometheus/`, `grafana/`, `caddy/` | Service configuration. The dashboard is `grafana/dashboards/claude-code-usage.json`. |
+| `collector/`, `prometheus/`, `grafana/` | Service configuration. The dashboard is `grafana/dashboards/claude-code-usage.json`. |
 | `.env.example` | Server settings: token, Company Account allowlist, Grafana password, domain |
 | `docs/deploy-hostinger.md` | Step-by-step deployment behind an existing nginx (the current Hostinger server) |
 | `docs/deploy.md` | Step-by-step deployment to EC2 and Device onboarding |
@@ -43,10 +42,9 @@ Grafana is at http://127.0.0.1:13000 (user `admin`).
 make test
 ```
 
-This runs five things, all in Docker:
+This runs four things, all in Docker:
 
-- **Config checks:** Collector, Prometheus, Caddy, shellcheck and the dashboard JSON.
+- **Config checks:** Collector, Prometheus, the production Compose setup, shellcheck and the dashboard JSON.
 - **Setup script tests:** the install script's own tests.
 - **Smoke test:** Company Accounts are stored, Personal Accounts are dropped, data without the token is rejected, and Grafana is locked down.
-- **Front-door test:** TLS through Caddy works, and only Caddy is exposed.
-- **nginx front-door test:** the same through the nginx site, and the stack itself listens on localhost only.
+- **Front-door test:** OTLP over TLS and Grafana over HTTPS work through the nginx site, and the stack itself listens on localhost only.
