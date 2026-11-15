@@ -1,0 +1,49 @@
+# OTLP gRPC receiver with the token check and the Company Account filter. Same config file as
+# Compose (collector/config.yaml, mounted from a generated ConfigMap).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  labels: {app: otel-collector}
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: otel-collector}
+  template:
+    metadata:
+      labels: {app: otel-collector}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: otel-collector
+          image: otel/opentelemetry-collector-contrib:0.130.0
+          args: [--config=/etc/otelcol-contrib/config.yaml]
+          env:
+            - name: OTEL_AUTH_TOKEN
+              valueFrom: {secretKeyRef: {name: claude-otel, key: OTEL_AUTH_TOKEN}}
+            - name: COMPANY_ACCOUNTS
+              valueFrom: {secretKeyRef: {name: claude-otel, key: COMPANY_ACCOUNTS}}
+          ports:
+            - {name: otlp-grpc, containerPort: 4317}
+          readinessProbe:
+            tcpSocket: {port: otlp-grpc}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 192Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - {name: config, mountPath: /etc/otelcol-contrib, readOnly: true}
+      volumes:
+        - name: config
+          configMap: {name: otel-collector-config}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+spec:
+  selector: {app: otel-collector}
+  ports:
+    - {name: otlp-grpc, port: 4317, targetPort: otlp-grpc, appProtocol: grpc}

@@ -1,6 +1,8 @@
-# Agent-skill configuration (local only)
+# Agent-skill configuration and Claude context (local only)
 CLAUDE.md
+CONTEXT.md
 docs/agents/
+docs/adr/
 .scratch/
 
 # Secrets
@@ -8,3 +10,6 @@ docs/agents/
 
 # Claude Code local state (agent worktrees)
 .claude/
+
+# Kubernetes settings (from k8s/settings.env.example)
+k8s/settings.env

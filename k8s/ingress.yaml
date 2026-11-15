@@ -1,0 +1,48 @@
+# The only way in: the cluster's ingress-nginx terminates TLS with certificates
+# from cert-manager. Two Ingresses, because backend-protocol applies to a whole Ingress and
+# only the Collector speaks gRPC. Hosts and the issuer come from k8s/settings.env.
+# On another ingress controller, change ingressClassName and the gRPC annotation.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: otel-collector
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: GRPC
+    cert-manager.io/cluster-issuer: CLUSTER_ISSUER
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [otel.DOMAIN]
+      secretName: otel-collector-tls
+  rules:
+    - host: otel.DOMAIN
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: otel-collector
+                port: {name: otlp-grpc}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  annotations:
+    cert-manager.io/cluster-issuer: CLUSTER_ISSUER
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [grafana.DOMAIN]
+      secretName: grafana-tls
+  rules:
+    - host: grafana.DOMAIN
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port: {name: http}

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Tests for install.sh (Device setup script).
+# Tests for mac_install.sh (Mac Device setup script).
 # TEST_SETTINGS_FILE, TEST_SERIAL and TEST_HOSTNAME point the script at a temp dir and fake
 # Device identity, so no root is needed and the real managed-settings file is never touched.
 # Must stay bash 3.2 compatible: /usr/bin/env bash is /bin/bash 3.2 on stock macOS.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-INSTALL=$PWD/install.sh
+INSTALL=$PWD/mac_install.sh
 REAL_SETTINGS="/Library/Application Support/ClaudeCode/managed-settings.json"
 TOKEN=s3cr3t-T0ken_abc.123
 SERIAL=C02TEST123
