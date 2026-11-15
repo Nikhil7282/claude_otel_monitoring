@@ -76,20 +76,36 @@
   },
   "panels": [
     {
+      "type": "text",
+      "title": "",
+      "transparent": true,
+      "options": {
+        "mode": "markdown",
+        "content": "Claude Code usage from **Company Accounts** only. **Cost is Claude Code's own estimate at API prices**: Max is a flat fee, so this is not the bill. Change is against the previous period of the same length."
+      },
       "id": 1,
-      "type": "row",
-      "title": "Summary",
-      "collapsed": false,
       "gridPos": {
         "x": 0,
         "y": 0,
         "w": 24,
-        "h": 1
-      },
-      "panels": []
+        "h": 2
+      }
     },
     {
+      "type": "row",
+      "title": "Summary",
+      "collapsed": false,
+      "panels": [],
       "id": 2,
+      "gridPos": {
+        "x": 0,
+        "y": 2,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 3,
       "type": "stat",
       "title": "Estimated cost (API-equivalent)",
       "datasource": {
@@ -98,9 +114,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 1,
+        "y": 3,
         "w": 6,
-        "h": 4
+        "h": 5
       },
       "targets": [
         {
@@ -113,14 +129,73 @@
           "format": "time_series",
           "instant": true,
           "range": false
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(sum((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range])) - sum((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range) - max_over_time((claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"} offset $__range)[$__range:5m] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range))) / (sum((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range) - max_over_time((claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"} offset $__range)[$__range:5m] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) > 0)",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "currencyUSD",
-          "noValue": "0"
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#73BF69"
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "vs previous"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "noValue",
+                "value": "–"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6E7480"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -130,14 +205,17 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "none",
+        "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value"
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "wideLayout": true
       },
-      "description": "Claude Code's own estimate at API prices. Max is a flat fee, so this is not the bill."
+      "description": "Claude Code's own estimate at API prices. Max is a flat fee, so this is not the bill. Change compares this period with the one before it, of the same length."
     },
     {
-      "id": 3,
+      "id": 4,
       "type": "stat",
       "title": "Tokens",
       "datasource": {
@@ -146,9 +224,9 @@
       },
       "gridPos": {
         "x": 6,
-        "y": 1,
-        "w": 4,
-        "h": 4
+        "y": 3,
+        "w": 5,
+        "h": 5
       },
       "targets": [
         {
@@ -161,14 +239,73 @@
           "format": "time_series",
           "instant": true,
           "range": false
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(sum((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range])) - sum((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range) - max_over_time((claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"} offset $__range)[$__range:5m] offset $__range)) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range))) / (sum((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range) - max_over_time((claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"} offset $__range)[$__range:5m] offset $__range)) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) > 0)",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "noValue": "0"
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#5794F2"
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "vs previous"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "noValue",
+                "value": "–"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6E7480"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -178,13 +315,17 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "none",
+        "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value"
-      }
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "wideLayout": true
+      },
+      "description": "Change compares this period with the one before it, of the same length."
     },
     {
-      "id": 4,
+      "id": 5,
       "type": "stat",
       "title": "Active time",
       "datasource": {
@@ -192,10 +333,10 @@
         "uid": "prometheus"
       },
       "gridPos": {
-        "x": 10,
-        "y": 1,
-        "w": 4,
-        "h": 4
+        "x": 11,
+        "y": 3,
+        "w": 5,
+        "h": 5
       },
       "targets": [
         {
@@ -208,14 +349,73 @@
           "format": "time_series",
           "instant": true,
           "range": false
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(sum((max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range])) - sum((max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range) - max_over_time((claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"} offset $__range)[$__range:5m] offset $__range)) or max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range))) / (sum((max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range) - max_over_time((claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"} offset $__range)[$__range:5m] offset $__range)) or max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) > 0)",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "s",
-          "noValue": "0"
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#FF9830"
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "vs previous"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "noValue",
+                "value": "–"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6E7480"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -225,13 +425,17 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "none",
+        "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value"
-      }
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "wideLayout": true
+      },
+      "description": "Change compares this period with the one before it, of the same length."
     },
     {
-      "id": 5,
+      "id": 6,
       "type": "stat",
       "title": "Sessions used",
       "datasource": {
@@ -239,10 +443,10 @@
         "uid": "prometheus"
       },
       "gridPos": {
-        "x": 14,
-        "y": 1,
+        "x": 16,
+        "y": 3,
         "w": 4,
-        "h": 4
+        "h": 5
       },
       "targets": [
         {
@@ -255,14 +459,73 @@
           "format": "time_series",
           "instant": true,
           "range": false
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "(count(sum by (session_id) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range])) > 0) - count(sum by (session_id) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range) - max_over_time((claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"} offset $__range)[$__range:5m] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) > 0)) / (count(sum by (session_id) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range) - max_over_time((claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"} offset $__range)[$__range:5m] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) > 0) > 0)",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "noValue": "0"
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#B877D9"
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Total"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "C"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "vs previous"
+              },
+              {
+                "id": "unit",
+                "value": "percentunit"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "noValue",
+                "value": "–"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#6E7480"
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -272,14 +535,17 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "none",
+        "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value"
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "wideLayout": true
       },
-      "description": "Claude Code sessions with at least one model request in the selected range. Windows opened and closed without asking anything are not counted."
+      "description": "Claude Code sessions with at least one model request in the selected range. Windows opened and closed without asking anything are not counted. Change compares this period with the one before it, of the same length."
     },
     {
-      "id": 6,
+      "id": 7,
       "type": "stat",
       "title": "Active Devices",
       "datasource": {
@@ -287,10 +553,10 @@
         "uid": "prometheus"
       },
       "gridPos": {
-        "x": 18,
-        "y": 1,
-        "w": 6,
-        "h": 4
+        "x": 20,
+        "y": 3,
+        "w": 4,
+        "h": 5
       },
       "targets": [
         {
@@ -303,14 +569,80 @@
           "format": "time_series",
           "instant": true,
           "range": false
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "count(group by (device_id) (max_over_time(claude_code_session_count_total{device_id=~\"$device\", user_email=~\"$account\", device_id!=\"\"}[30d])) unless on (device_id) (sum by (device_id) ((max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\", device_id!=\"\"}[$__range]) - max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\", device_id!=\"\"}[$__range] offset $__range)) or max_over_time(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\", device_id!=\"\"}[$__range])) > 0))",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "noValue": "0"
+          "noValue": "0",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "#F2CC0C"
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "A"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Active"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byFrameRefID",
+              "options": "B"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Silent"
+              },
+              {
+                "id": "noValue",
+                "value": "0"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#6E7480",
+                      "value": null
+                    },
+                    {
+                      "color": "#FF7383",
+                      "value": 1
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "reduceOptions": {
@@ -320,27 +652,428 @@
           "fields": "",
           "values": false
         },
-        "colorMode": "none",
+        "colorMode": "background",
         "graphMode": "none",
-        "textMode": "value"
+        "textMode": "value_and_name",
+        "justifyMode": "center",
+        "orientation": "horizontal",
+        "wideLayout": true
       },
-      "description": "Devices with any active time in the selected range. Claude Desktop app usage has no serial number, so it is not counted here."
+      "description": "Active: Devices with active time in the range (Desktop app usage has no serial number, so it isn't counted). Silent: Devices seen in the last 30 days that were not active in the range."
     },
     {
-      "id": 7,
+      "type": "row",
+      "title": "Trends",
+      "collapsed": false,
+      "panels": [],
+      "id": 8,
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 1
+      }
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Estimated cost (API-equivalent) per Device per day",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 9,
+        "w": 14,
+        "h": 9
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (device_id, host_name) (label_replace(label_join((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d])) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
+          "refId": "A",
+          "format": "time_series",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{host_name}}",
+          "interval": "1d"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 85,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal",
+              "group": "A"
+            },
+            "barAlignment": 0,
+            "gradientMode": "none"
+          },
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "interval": "1d"
+    },
+    {
+      "type": "piechart",
+      "title": "Estimated cost by model",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Share of the estimated cost (API-equivalent) per model in the selected range.",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (model) ((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]))",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{model}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*opus.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sonnet.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*haiku.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "pieType": "donut",
+        "displayLabels": [
+          "percent"
+        ],
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "id": 10,
+      "gridPos": {
+        "x": 14,
+        "y": 9,
+        "w": 10,
+        "h": 9
+      }
+    },
+    {
+      "type": "bargauge",
+      "title": "Top Devices by estimated cost",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "The ten Devices with the highest estimated cost (API-equivalent) in the range.",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sort_desc(topk(10, sum by (host_name) (label_replace(label_join((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range] offset $__range)) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[$__range]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))))",
+          "instant": true,
+          "range": false,
+          "format": "time_series",
+          "legendFormat": "{{host_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "min": 0,
+          "color": {
+            "mode": "continuous-BlPu"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "gradient",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "sizing": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 11,
+      "gridPos": {
+        "x": 0,
+        "y": 18,
+        "w": 10,
+        "h": 8
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Tokens by model per day",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 10,
+        "y": 18,
+        "w": 9,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (model) ((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d])) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d))",
+          "refId": "A",
+          "format": "time_series",
+          "instant": false,
+          "range": true,
+          "legendFormat": "{{model}}",
+          "interval": "1d"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 20,
+            "lineWidth": 1,
+            "stacking": {
+              "mode": "normal"
+            },
+            "gradientMode": "opacity"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*opus.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#B877D9"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*sonnet.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#5794F2"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*haiku.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "#73BF69"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {},
+      "interval": "1d"
+    },
+    {
+      "type": "gauge",
+      "title": "Cache hit rate",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Share of input tokens served from the prompt cache. Cached tokens cost much less, which is why the estimated cost is lower than the token count suggests.",
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\", type=\"cacheRead\"}[$__range]) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\", type=\"cacheRead\"}[$__range] offset $__range)) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\", type=\"cacheRead\"}[$__range])) / sum((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\", type=~\"input|cacheRead|cacheCreation\"}[$__range]) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\", type=~\"input|cacheRead|cacheCreation\"}[$__range] offset $__range)) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\", type=~\"input|cacheRead|cacheCreation\"}[$__range]))",
+          "instant": true,
+          "range": false,
+          "format": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "decimals": 0,
+          "noValue": "–",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#FF9830",
+                "value": null
+              },
+              {
+                "color": "#F2CC0C",
+                "value": 0.5
+              },
+              {
+                "color": "#73BF69",
+                "value": 0.75
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showThresholdMarkers": false,
+        "showThresholdLabels": false,
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 13,
+      "gridPos": {
+        "x": 19,
+        "y": 18,
+        "w": 5,
+        "h": 8
+      }
+    },
+    {
       "type": "row",
       "title": "Per Device",
       "collapsed": false,
+      "panels": [],
+      "id": 14,
       "gridPos": {
         "x": 0,
-        "y": 5,
+        "y": 26,
         "w": 24,
         "h": 1
-      },
-      "panels": []
+      }
     },
     {
-      "id": 8,
+      "id": 15,
       "type": "table",
       "title": "Usage per Device",
       "datasource": {
@@ -349,9 +1082,9 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 6,
+        "y": 27,
         "w": 24,
-        "h": 9
+        "h": 10
       },
       "targets": [
         {
@@ -458,7 +1191,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (device_id, host_name, user_email) (label_replace(label_join(max_over_time(timestamp(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"})[$__range:5m]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\")) * 1000",
+          "expr": "time() - max by (device_id, host_name, user_email) (label_replace(label_join(max_over_time(timestamp(claude_code_active_time_seconds_total{device_id=~\"$device\", user_email=~\"$account\"})[$__range:5m]), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
           "refId": "J",
           "format": "table",
           "instant": true,
@@ -467,7 +1200,7 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "noValue": "\u2013",
+          "noValue": "–",
           "custom": {
             "minWidth": 70,
             "align": "auto"
@@ -483,6 +1216,28 @@
               {
                 "id": "unit",
                 "value": "currencyUSD"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "gradient",
+                  "valueDisplayMode": "text"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "continuous-BlPu"
+                }
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "custom.width",
+                "value": 170
               }
             ]
           },
@@ -579,18 +1334,56 @@
               {
                 "id": "unit",
                 "value": "percentunit"
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Last seen"
-            },
-            "properties": [
+              },
               {
-                "id": "unit",
-                "value": "dateTimeFromNow"
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "lcd",
+                  "valueDisplayMode": "text"
+                }
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 1
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#FF7383",
+                      "value": null
+                    },
+                    {
+                      "color": "#F2CC0C",
+                      "value": 0.5
+                    },
+                    {
+                      "color": "#73BF69",
+                      "value": 0.75
+                    }
+                  ]
+                }
+              },
+              {
+                "id": "custom.width",
+                "value": 130
               }
             ]
           },
@@ -613,8 +1406,52 @@
             },
             "properties": [
               {
+                "id": "unit",
+                "value": "dtdurations"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "displayName",
+                "value": "Last seen (ago)"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "color",
+                "value": {
+                  "mode": "thresholds"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "#73BF69",
+                      "value": null
+                    },
+                    {
+                      "color": "#F2CC0C",
+                      "value": 3600
+                    },
+                    {
+                      "color": "#FF7383",
+                      "value": 86400
+                    }
+                  ]
+                }
+              },
+              {
                 "id": "custom.width",
-                "value": 130
+                "value": 150
               }
             ]
           }
@@ -629,7 +1466,7 @@
           }
         ]
       },
-      "description": "Totals for the selected time range. Sessions used counts sessions with at least one model request; a session switched to another account with /login counts for both accounts. Last seen is when the Device last reported while Claude Code was running. Claude Desktop app usage has no serial number or hostname, so it is shown as \"Desktop app (<Mac user name>)\".",
+      "description": "Totals for the selected time range. Sessions used counts sessions with at least one model request; a session switched to another account with /login counts for both accounts. Last seen is how long ago the Device last reported while Claude Code was running: green within an hour, yellow within a day, red after that. Claude Desktop app usage has no serial number or hostname, so it is shown as \"Desktop app (<Mac user name>)\".",
       "transformations": [
         {
           "id": "merge",
@@ -682,125 +1519,20 @@
       ]
     },
     {
-      "id": 9,
-      "type": "row",
-      "title": "Trends",
-      "collapsed": false,
-      "gridPos": {
-        "x": 0,
-        "y": 15,
-        "w": 24,
-        "h": 1
-      },
-      "panels": []
-    },
-    {
-      "id": 10,
-      "type": "timeseries",
-      "title": "Estimated cost (API-equivalent) per Device per day",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 0,
-        "y": 16,
-        "w": 12,
-        "h": 8
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (device_id, host_name) (label_replace(label_join((max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d) - max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d])) or max_over_time(claude_code_cost_usage_USD_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d), \"device_key\", \";\", \"host_name\", \"service_name\", \"process_owner\"), \"host_name\", \"Desktop app ($1)\", \"device_key\", \";claude-code-desktop;(.+)\"))",
-          "refId": "A",
-          "format": "time_series",
-          "instant": false,
-          "range": true,
-          "legendFormat": "{{host_name}}",
-          "interval": "1d"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "currencyUSD",
-          "custom": {
-            "drawStyle": "bars",
-            "fillOpacity": 80,
-            "lineWidth": 1,
-            "stacking": {
-              "mode": "normal"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {},
-      "interval": "1d"
-    },
-    {
-      "id": 11,
-      "type": "timeseries",
-      "title": "Tokens by model per day",
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "gridPos": {
-        "x": 12,
-        "y": 16,
-        "w": 12,
-        "h": 8
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "expr": "sum by (model) ((max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d) - max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d])) or max_over_time(claude_code_token_usage_tokens_total{device_id=~\"$device\", user_email=~\"$account\"}[1d] offset -1d))",
-          "refId": "A",
-          "format": "time_series",
-          "instant": false,
-          "range": true,
-          "legendFormat": "{{model}}",
-          "interval": "1d"
-        }
-      ],
-      "fieldConfig": {
-        "defaults": {
-          "unit": "short",
-          "custom": {
-            "drawStyle": "bars",
-            "fillOpacity": 80,
-            "lineWidth": 1,
-            "stacking": {
-              "mode": "normal"
-            }
-          }
-        },
-        "overrides": []
-      },
-      "options": {},
-      "interval": "1d"
-    },
-    {
-      "id": 12,
       "type": "row",
       "title": "Output",
       "collapsed": false,
+      "panels": [],
+      "id": 16,
       "gridPos": {
         "x": 0,
-        "y": 24,
+        "y": 37,
         "w": 24,
         "h": 1
-      },
-      "panels": []
+      }
     },
     {
-      "id": 13,
+      "id": 17,
       "type": "bargauge",
       "title": "Lines of code per Device",
       "datasource": {
@@ -809,7 +1541,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 25,
+        "y": 38,
         "w": 12,
         "h": 8
       },
@@ -841,13 +1573,16 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short"
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          }
         },
         "overrides": []
       },
       "options": {
         "orientation": "horizontal",
-        "displayMode": "basic",
+        "displayMode": "gradient",
         "showUnfilled": true,
         "namePlacement": "top",
         "valueMode": "color",
@@ -868,7 +1603,7 @@
       }
     },
     {
-      "id": 14,
+      "id": 18,
       "type": "bargauge",
       "title": "Commits and PRs per Device",
       "datasource": {
@@ -877,7 +1612,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 25,
+        "y": 38,
         "w": 12,
         "h": 8
       },
@@ -909,13 +1644,16 @@
       ],
       "fieldConfig": {
         "defaults": {
-          "unit": "short"
+          "unit": "short",
+          "color": {
+            "mode": "palette-classic"
+          }
         },
         "overrides": []
       },
       "options": {
         "orientation": "horizontal",
-        "displayMode": "basic",
+        "displayMode": "gradient",
         "showUnfilled": true,
         "namePlacement": "top",
         "valueMode": "color",

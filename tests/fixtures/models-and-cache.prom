@@ -1,0 +1,10 @@
+# For the redesigned dashboard panels. A second model (sonnet) in an existing session, so
+# cost by model has two slices and no session count changes; token usage by type, so the
+# cache hit rate is 6000 / (1000 + 6000 + 1000) = 0.75; and a Device that started a session
+# but has no active time, so it counts as silent.
+claude_code_cost_usage_USD_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-one@example.com",session_id="s-one-a",model="claude-sonnet-5-5"} 0.05
+claude_code_token_usage_tokens_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-one@example.com",session_id="s-one-a",model="claude-opus-5-5",type="input"} 1000
+claude_code_token_usage_tokens_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-one@example.com",session_id="s-one-a",model="claude-opus-5-5",type="output"} 500
+claude_code_token_usage_tokens_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-one@example.com",session_id="s-one-a",model="claude-opus-5-5",type="cacheRead"} 6000
+claude_code_token_usage_tokens_total{device_id="FIXTURE-DEVICE",host_name="fixture-host",user_email="company-one@example.com",session_id="s-one-a",model="claude-opus-5-5",type="cacheCreation"} 1000
+claude_code_session_count_total{device_id="SILENT-DEVICE",host_name="silent-host",user_email="company-one@example.com",session_id="s-silent",start_type="fresh"} 1

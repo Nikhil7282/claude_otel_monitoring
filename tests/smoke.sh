@@ -117,7 +117,7 @@ send_metric SMOKE-COMPANY-TWO company-two@example.org
 # Real-shaped Claude Code series for dashboard checks, written straight to Prometheus.
 "${COMPOSE[@]}" run --rm --no-deps -v "$PWD/tests/fixtures:/fixtures:ro" --entrypoint promtool \
   prometheus push metrics http://prometheus:9090/api/v1/write \
-  /fixtures/account-switch.prom /fixtures/desktop-app.prom >/dev/null 2>&1
+  /fixtures/account-switch.prom /fixtures/desktop-app.prom /fixtures/models-and-cache.prom >/dev/null 2>&1
 
 echo "Assertions:"
 for device in SMOKE-COMPANY-ONE SMOKE-COMPANY-TWO; do
@@ -221,6 +221,48 @@ if [[ $active_devices == 1 ]]; then
   pass "Active Devices counts serial numbers only"
 else
   fail "Active Devices counts serial numbers only (got '${active_devices}', want 1)"
+fi
+
+# query_series QUERY LABEL: one "<label value> <value>" line per result, in Prometheus's order.
+query_series() {
+  curl -sG "$PROM_URL/api/v1/query" --data-urlencode "query=$1" |
+    jq -r --arg label "$2" '.data.result[]? | [(.metric[$label] // ""), .value[1]] | join(" ")' 2>/dev/null || true
+}
+by_model=$(query_series "$(panel_query 'Estimated cost by model' A)" model | sort | tr '\n' ';')
+if [[ $by_model == "claude-opus-5-5 4.31;claude-sonnet-5-5 0.05;" ]]; then
+  pass "Estimated cost by model has one slice per model"
+else
+  fail "Estimated cost by model has one slice per model (got '${by_model}')"
+fi
+top_devices=$(query_series "$(panel_query 'Top Devices by estimated cost' A)" host_name | tr '\n' ';')
+if [[ $top_devices == "Desktop app (cyberminds) 2.5;fixture-host 1.86;" ]]; then
+  pass "Top Devices by estimated cost is ordered by cost and names Desktop app usage"
+else
+  fail "Top Devices by estimated cost is ordered by cost and names Desktop app usage (got '${top_devices}')"
+fi
+cache_hit=$(query_values "$(panel_query 'Cache hit rate' A)")
+if [[ $cache_hit == 0.75 ]]; then
+  pass "Cache hit rate is cache reads over all input tokens"
+else
+  fail "Cache hit rate is cache reads over all input tokens (got '${cache_hit}', want 0.75)"
+fi
+silent=$(query_values "$(panel_query 'Active Devices' B)")
+if [[ $silent == 1 ]]; then
+  pass "Active Devices counts a Device with sessions but no active time as silent"
+else
+  fail "Active Devices counts a Device with sessions but no active time as silent (got '${silent}', want 1)"
+fi
+# Every query on the dashboard, including the change against the previous period, is valid
+# PromQL that Prometheus runs without an error.
+bad_queries=""
+while IFS=$'\t' read -r title ref; do
+  status=$(curl -sG "$PROM_URL/api/v1/query" --data-urlencode "query=$(panel_query "$title" "$ref")" | jq -r .status 2>/dev/null)
+  [[ $status == success ]] || bad_queries+="'$title' $ref; "
+done < <(jq -r '.panels[] | .title as $t | .targets[]? | [$t, .refId] | @tsv' grafana/dashboards/claude-code-usage.json)
+if [[ -z $bad_queries ]]; then
+  pass "Every dashboard query runs"
+else
+  fail "Every dashboard query runs (failed: $bad_queries)"
 fi
 
 if ((failures > 0)); then
