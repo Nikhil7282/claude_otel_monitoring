@@ -8,10 +8,10 @@ SETTINGS_FILE=${TEST_SETTINGS_FILE:-/Library/Application Support/ClaudeCode/mana
 usage() {
   cat <<'EOF'
 Usage:
-  sudo ./install.sh --token TOKEN --domain DOMAIN     endpoint becomes https://otel.DOMAIN:443
-  sudo ./install.sh --token TOKEN --endpoint URL      e.g. http://localhost:4317
-  ./install.sh --check                                show settings (token masked), test endpoint
-  sudo ./install.sh --uninstall                       remove the settings file
+  sudo ./mac_install.sh --token TOKEN --domain DOMAIN     endpoint becomes https://otel.DOMAIN:443
+  sudo ./mac_install.sh --token TOKEN --endpoint URL      e.g. http://localhost:4317
+  ./mac_install.sh --check                                show settings (token masked), test endpoint
+  sudo ./mac_install.sh --uninstall                       remove the settings file
 EOF
 }
 

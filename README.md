@@ -12,7 +12,7 @@ Mac: Claude Code ──OTLP──► Caddy ──► OTel Collector ──► Pr
 
 | Path | What it is |
 |---|---|
-| `install.sh` | Sets up a Mac as a Device (writes Claude Code's managed settings) |
+| `mac_install.sh` | Sets up a Mac as a Device (writes Claude Code's managed settings) |
 | `compose.yaml` | Collector, Prometheus (400-day retention) and Grafana. No public ports. |
 | `compose.prod.yaml` | Adds Caddy (TLS, the only public service) and memory limits |
 | `compose.nginx.yaml`, `nginx/` | Alternative to Caddy for a server that already runs nginx: localhost-only ports and an nginx site template |
@@ -32,7 +32,7 @@ The Code tab in the Claude Desktop app sends usage too, but it replaces the Devi
 ```bash
 cp .env.example .env    # fill in the values
 docker compose -f compose.yaml -f compose.local.yaml up -d
-sudo ./install.sh --token <OTEL_AUTH_TOKEN> --endpoint http://localhost:4317
+sudo ./mac_install.sh --token <OTEL_AUTH_TOKEN> --endpoint http://localhost:4317
 ```
 
 Grafana is at http://127.0.0.1:13000 (user `admin`).

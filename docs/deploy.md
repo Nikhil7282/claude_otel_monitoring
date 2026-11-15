@@ -238,13 +238,13 @@ Anonymous access and sign-up are turned off, so no one can see the dashboard wit
 
 To have someone else set up their own Mac, send them [`onboard-device.md`](onboard-device.md) together with the domain and the token (privately). The steps below are the same, done by you.
 
-Do this on each developer Mac. You need the repo (or just `install.sh`) and the token from `.env`.
+Do this on each developer Mac. You need the repo (or just `mac_install.sh`) and the token from `.env`.
 
 ```bash
 git clone https://github.com/Nikhil7282/claude_otel_monitoring.git
 cd claude_otel_monitoring
-sudo ./install.sh --token <OTEL_AUTH_TOKEN> --domain <DOMAIN>
-./install.sh --check      # settings (token masked) + "Endpoint otel.<DOMAIN>:443 is reachable"
+sudo ./mac_install.sh --token <OTEL_AUTH_TOKEN> --domain <DOMAIN>
+./mac_install.sh --check      # settings (token masked) + "Endpoint otel.<DOMAIN>:443 is reachable"
 ```
 
 The script reads the Mac's serial number and hostname on its own. Then:
@@ -285,10 +285,10 @@ All commands run on the server, in `~/claude_otel_monitoring`.
 | Task | Steps |
 |---|---|
 | **Add a Company Account** | Add the email to `COMPANY_ACCOUNTS` in `.env` (comma, no spaces), then run `docker compose up -d`. Compose recreates the Collector with the new list. |
-| **Rotate the token** | Put a new `openssl rand -hex 32` value in `.env`, run `docker compose up -d`, then re-run `sudo ./install.sh --token <new> --domain ...` on every Mac. Each Mac stops reporting until it's updated. |
+| **Rotate the token** | Put a new `openssl rand -hex 32` value in `.env`, run `docker compose up -d`, then re-run `sudo ./mac_install.sh --token <new> --domain ...` on every Mac. Each Mac stops reporting until it's updated. |
 | **Update to the latest code** | `git pull && docker compose up -d` |
 | **View logs** | `docker compose logs -f otel-collector` (or `caddy`, `prometheus`, `grafana`) |
-| **Remove a Device** | On the Mac, run `sudo ./install.sh --uninstall`. Its history stays on the dashboard. |
+| **Remove a Device** | On the Mac, run `sudo ./mac_install.sh --uninstall`. Its history stays on the dashboard. |
 | **Find a silent Device** | Sort the per-Device table by **Last seen**. |
 
 ## What to tell developers

@@ -22,11 +22,11 @@ You need:
 
 ```bash
 mkdir -p ~/claude-monitoring && cd ~/claude-monitoring
-curl -fsSLO https://raw.githubusercontent.com/Nikhil7282/claude_otel_monitoring/main/install.sh
-chmod +x install.sh
+curl -fsSLO https://raw.githubusercontent.com/Nikhil7282/claude_otel_monitoring/main/mac_install.sh
+chmod +x mac_install.sh
 ```
 
-The script runs with admin rights, so it's worth a quick look first: `less install.sh` (press `q` to quit). It only writes one file, `/Library/Application Support/ClaudeCode/managed-settings.json`.
+The script runs with admin rights, so it's worth a quick look first: `less mac_install.sh` (press `q` to quit). It only writes one file, `/Library/Application Support/ClaudeCode/managed-settings.json`.
 
 ## 2. Run it
 
@@ -34,7 +34,7 @@ Type the token in a way that keeps it out of your shell history:
 
 ```bash
 read -rs TOKEN        # paste the token, press Enter. Nothing is shown; that's expected.
-sudo ./install.sh --token "$TOKEN" --domain <server-domain>
+sudo ./mac_install.sh --token "$TOKEN" --domain <server-domain>
 unset TOKEN
 ```
 
@@ -47,7 +47,7 @@ Wrote /Library/Application Support/ClaudeCode/managed-settings.json (device.id=<
 ## 3. Check it
 
 ```bash
-./install.sh --check
+./mac_install.sh --check
 ```
 
 The last line should say **`Endpoint otel.<server-domain>:443 is reachable`**. The token shows as `****`.
@@ -63,7 +63,7 @@ The last line should say **`Endpoint otel.<server-domain>:443 is reachable`**. T
 ## Remove it
 
 ```bash
-cd ~/claude-monitoring && sudo ./install.sh --uninstall
+cd ~/claude-monitoring && sudo ./mac_install.sh --uninstall
 ```
 
 Claude Code stops sending usage from the next session onwards. Data already collected stays on the dashboard.
@@ -74,5 +74,5 @@ Claude Code stops sending usage from the next session onwards. Data already coll
 |---|---|
 | `must be run as root` | Run the install command with `sudo` in front. |
 | `--check` says **NOT reachable** | Your network may block outgoing port 443 to that host. Try another network, and check the domain for typos. |
-| Not on the dashboard after 5 minutes | Start a **new** terminal and `claude` session, and check `/status` shows a company account. If it still doesn't appear, send the admin the output of `./install.sh --check`. |
+| Not on the dashboard after 5 minutes | Start a **new** terminal and `claude` session, and check `/status` shows a company account. If it still doesn't appear, send the admin the output of `./mac_install.sh --check`. |
 | `--token has unexpected characters` | The token was copied with extra spaces or quotes. Paste it again, exactly as given. |
