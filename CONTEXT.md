@@ -15,7 +15,7 @@ _Avoid_: Private account
 ## Devices
 
 **Device**:
-One developer Mac that has the monitoring rollout installed, identified by its hardware serial number. The main unit for reporting usage; its hostname is only a display label.
+One developer computer (a Mac or a Windows PC) that has the monitoring rollout installed, identified by a hardware ID that survives a rename or reinstall: the serial number, or on a Windows PC without a real serial, the SMBIOS UUID or an asset tag the admin gives. The main unit for reporting usage; its hostname is only a display label.
 _Avoid_: Machine, host, laptop
 
 **Desktop App Usage**:
