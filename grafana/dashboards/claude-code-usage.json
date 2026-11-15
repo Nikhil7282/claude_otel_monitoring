@@ -878,14 +878,20 @@
         "displayMode": "gradient",
         "showUnfilled": true,
         "valueMode": "color",
-        "namePlacement": "left",
-        "sizing": "auto",
+        "namePlacement": "top",
+        "sizing": "manual",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
           ],
           "fields": "",
           "values": false
+        },
+        "minVizHeight": 24,
+        "maxVizHeight": 36,
+        "text": {
+          "titleSize": 14,
+          "valueSize": 14
         }
       },
       "id": 11,
