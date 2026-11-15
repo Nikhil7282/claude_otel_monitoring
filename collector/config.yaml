@@ -28,6 +28,13 @@ exporters:
     # device.id and host.name are resource attributes; without this they never become labels.
     resource_to_telemetry_conversion:
       enabled: true
+    # No target_info series. Every Claude Code process on a Device has the same resource
+    # attributes, so concurrent sessions each sent a target_info sample for one and the same
+    # series; Prometheus rejected the interleaved timestamps as out of order and dropped the
+    # whole batch, usage data included. Nothing reads target_info; the labels it carries are
+    # already on every metric (resource_to_telemetry_conversion).
+    target_info:
+      enabled: false
 
 service:
   extensions: [bearertokenauth]

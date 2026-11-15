@@ -376,7 +376,7 @@ On the VM, commands run in `~/claude_otel_monitoring`. On Kubernetes, they run i
 |---|---|---|
 | **Add a Company Account** | Add the email to `COMPANY_ACCOUNTS` in `.env` (comma, no spaces), then `docker compose up -d`. | The same edit to `.env`, then `kubectl apply -k .` |
 | **Rotate the token** | A new `openssl rand -hex 32` in `.env`, `docker compose up -d` | The same edit, `kubectl apply -k .` |
-| **Update to the latest code** | `git pull && docker compose up -d`. If `nginx/` changed, re-run the `render.sh` line from step 7, then `sudo nginx -t && sudo systemctl reload nginx`. | `git pull && kubectl apply -k .` |
+| **Update to the latest code** | `git pull && docker compose up -d --force-recreate`. The config files are mounted, so a plain `up -d` wouldn't restart the Collector for a changed `collector/config.yaml`; the recreate takes a few seconds and Devices retry. If `nginx/` changed, re-run the `render.sh` line from step 7, then `sudo nginx -t && sudo systemctl reload nginx`. | `git pull && kubectl apply -k .` |
 | **View logs** | `docker compose logs -f otel-collector` (or `prometheus`, `grafana`) | `kubectl -n claude-otel logs -f deploy/otel-collector` (or `statefulset/prometheus`, `deploy/grafana`) |
 | **Check the certificate** | `sudo certbot certificates --cert-name claude-otel` | `kubectl -n claude-otel get certificate` |
 | **Change `DOMAIN`** | New A records, `DOMAIN` in `.env`, `docker compose up -d`, the certbot command from step 6 with the new names (same `--cert-name`), then the `render.sh` line from step 7 | New DNS records, `DOMAIN` in `k8s/settings.env`, `kubectl apply -k .` |

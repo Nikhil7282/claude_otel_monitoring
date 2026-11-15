@@ -133,6 +133,13 @@ else
   fail "Device carries device_id, host_name and user_email labels"
 fi
 
+# Concurrent Claude Code sessions on one Device share their resource attributes, so a
+# target_info series would get interleaved samples, and Prometheus drops the whole batch.
+if [[ $(series_count 'target_info') == 0 ]]; then
+  pass "No target_info series is written (it made concurrent sessions drop batches)"
+else
+  fail "No target_info series is written (it made concurrent sessions drop batches)"
+fi
 for device in SMOKE-PERSONAL SMOKE-LOOKALIKE SMOKE-NO-EMAIL; do
   if [[ $(series_count "{device_id=\"$device\"}") == 0 ]]; then
     pass "Personal Account Device $device is dropped"
