@@ -194,7 +194,7 @@ cat .env
 ```
 
 - `COMPANY_ACCOUNTS` is comma-separated with **no spaces**. A space becomes part of the address, and that account's data is silently dropped.
-- Don't add comments after a value on the same line.
+- Don't put quotes around values or comments after them. Docker Compose would cope, but the same file is used as-is on Kubernetes.
 - Copy `OTEL_AUTH_TOKEN` and `GRAFANA_ADMIN_PASSWORD` into your password manager. `.env` is git-ignored; it is the only place the token, the password and the company emails live.
 - `COMPOSE_FILE` makes a plain `docker compose …` use the production setup: the stack listens on **localhost-only** ports (Collector 14317, Grafana 13000; Prometheus isn't published at all), and every container has a memory limit.
 
@@ -253,7 +253,7 @@ The server is done. Next: [onboard Devices](#onboard-devices).
 
 ## Kubernetes cluster
 
-For teams that already run a cluster. Everything goes into its own namespace, `claude-otel`, and only two Ingresses are exposed. The manifests are in `k8s/`; the `kustomization.yaml` at the repo root builds the ConfigMaps from the same `collector/`, `prometheus/` and `grafana/` files the VM uses, so the two paths never drift.
+For teams that already run a cluster. Everything goes into its own namespace, `claude-otel`, and only two Ingresses are exposed. The manifests are in `k8s/`; the `kustomization.yaml` at the repo root builds the ConfigMaps from the same `collector/`, `prometheus/` and `grafana/` files the VM uses, and `make test` checks that the images, Prometheus flags, memory limits and Grafana settings match the Compose setup, so the two paths can't drift apart unnoticed.
 
 ### 1. Check the cluster has what it needs
 
@@ -289,7 +289,7 @@ EOF
 chmod 600 .env
 ```
 
-Both files are git-ignored. `.env` becomes the `claude-otel` Secret. The same rules apply: no spaces in `COMPANY_ACCOUNTS`, and no comments after a value (Kustomize reads values literally).
+Both files are git-ignored. `.env` becomes the `claude-otel` Secret. The same rules apply, and here they're strict because Kustomize reads values literally: no spaces in `COMPANY_ACCOUNTS`, no quotes around values, and no comments after a value. A quoted token would keep its quotes, and every Device would be rejected.
 
 ### 3. Point your domain at the ingress
 
@@ -381,8 +381,8 @@ On the VM, commands run in `~/claude_otel_monitoring`. On Kubernetes, they run i
 | **Check the certificate** | `sudo certbot certificates --cert-name claude-otel` | `kubectl -n claude-otel get certificate` |
 | **Change `DOMAIN`** | New A records, `DOMAIN` in `.env`, `docker compose up -d`, the certbot command from step 6 with the new names (same `--cert-name`), then the `render.sh` line from step 7 | New DNS records, `DOMAIN` in `k8s/settings.env`, `kubectl apply -k .` |
 | **Move to another server** | Set up the new VM with the old `.env` (same token and `DOMAIN`), copy the Docker volumes if you want the history, point the two A records at the new IP, then get the certificate (step 6). No Device changes. | Apply to the new cluster with the same two files, restore the PVCs if you want the history, point the DNS records at the new ingress. No Device changes. |
-| **Remove a Device** | On the Mac: `sudo ./mac_install.sh --uninstall`. On Windows: `.\windows_install.ps1 -Uninstall`. Its history stays on the dashboard. | Same |
-| **Find a silent Device** | The **Active Devices** tile counts silent Devices; sort the per-Device table by **Last seen**. | Same |
+| **Remove a Device** | On the Mac: `sudo ./mac_install.sh --uninstall`. On Windows, in an administrator PowerShell after the `Set-ExecutionPolicy` line: `.\windows_install.ps1 -Uninstall`. Its history stays on the dashboard. | Same |
+| **Find a silent Device** | The **Active Devices** tile counts silent Devices; sort the per-Device table by **Last seen (ago)**. | Same |
 | **Remove everything** | `sudo rm /etc/nginx/sites-enabled/claude-otel && sudo nginx -t && sudo systemctl reload nginx`, then `docker compose down` (add `-v` to delete the data too) | `kubectl delete -k .` (this deletes the namespace, so the data goes too) |
 | **Backups** | Your provider's disk snapshots or backups (step 1). All data is in Docker volumes on the VM's disk. | Your cluster's volume snapshots or Velero |
 
@@ -392,7 +392,7 @@ After rotating the token or changing `DOMAIN`, re-run the setup script on every 
 
 The Code tab in the Claude Desktop app sends usage too, but it replaces the Device labels (serial number and hostname) with its own. Nothing in the managed settings can override that. The dashboard shows this usage as **Desktop app (&lt;user name&gt;)**. It counts towards cost, tokens and sessions, but not towards Active Devices.
 
-## Try it on your laptop
+## Try it on your own computer
 
 ```bash
 cp .env.example .env    # fill in the values
@@ -426,7 +426,7 @@ This runs, all in Docker:
 | `compose.yaml` | Collector, Prometheus (400-day retention) and Grafana. No published ports. |
 | `compose.nginx.yaml`, `nginx/` | Production on a VM: localhost-only ports, memory limits and the nginx site template |
 | `kustomization.yaml`, `k8s/` | The Kubernetes path: manifests, Ingresses and the settings example |
-| `compose.local.yaml` | Exposes the stack on localhost for trying it on a laptop |
+| `compose.local.yaml` | Exposes the stack on localhost for trying it on your own computer |
 | `collector/`, `prometheus/`, `grafana/` | Service configuration. The dashboard is `grafana/dashboards/claude-code-usage.json`. |
 | `.env.example` | Server settings: domain, token, Company Account allowlist, Grafana password |
 | `docs/onboard-device.md` | Guide to send someone so they can set up their own Mac or Windows PC |

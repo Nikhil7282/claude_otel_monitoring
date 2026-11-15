@@ -1466,7 +1466,7 @@
           }
         ]
       },
-      "description": "Totals for the selected time range. Sessions used counts sessions with at least one model request; a session switched to another account with /login counts for both accounts. Last seen is how long ago the Device last reported while Claude Code was running: green within an hour, yellow within a day, red after that. Claude Desktop app usage has no serial number or hostname, so it is shown as \"Desktop app (<Mac user name>)\".",
+      "description": "Totals for the selected time range. Sessions used counts sessions with at least one model request; a session switched to another account with /login counts for both accounts. Last seen is how long ago the Device last reported while Claude Code was running: green within an hour, yellow within a day, red after that. Claude Desktop app usage has no serial number or hostname, so it is shown as \"Desktop app (<user name>)\".",
       "transformations": [
         {
           "id": "merge",

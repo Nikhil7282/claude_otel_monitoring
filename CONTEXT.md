@@ -19,7 +19,7 @@ One developer computer (a Mac or a Windows PC) that has the monitoring rollout i
 _Avoid_: Machine, host, laptop
 
 **Desktop App Usage**:
-Usage from the Code tab of the Claude Desktop app. It can't carry a Device's serial number or hostname, so it is reported under the Mac's user name instead and isn't counted as a Device.
+Usage from the Code tab of the Claude Desktop app. It can't carry a Device's serial number or hostname, so it is reported under the computer's user name instead and isn't counted as a Device.
 
 **Developer Mapping**:
 An optional link from a Device to the person who uses it, added only when per-person reporting is needed.

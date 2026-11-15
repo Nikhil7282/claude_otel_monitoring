@@ -3,7 +3,7 @@
 # few minutes). Creates a throwaway kind cluster with ingress-nginx and cert-manager, applies
 # the kustomization the way the README does, and checks that OTLP over TLS through the
 # Ingress reaches Prometheus for a Company Account only, and that Grafana answers over HTTPS.
-# Needs Docker and kubectl; downloads a pinned kind into .scratch/bin if it isn't installed.
+# Needs Docker and kubectl; downloads the pinned kind into .scratch/bin on first use.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -19,16 +19,16 @@ COMPANY=company-one@example.com
 OTEL_AUTH_TOKEN=$(openssl rand -hex 32)
 GRAFANA_ADMIN_PASSWORD=$(openssl rand -hex 16)
 failures=0
+# shellcheck source=tests/k8s_common.sh
+. tests/k8s_common.sh
 
 mkdir -p .scratch
 WORK=$(mktemp -d "$PWD/.scratch/k8s-e2e.XXXXXX")
 export KUBECONFIG=$WORK/kubeconfig
 
+# The pinned kind, downloaded once into .scratch/bin (any kind on PATH is ignored, so every
+# run uses the same version).
 kind_bin() {
-  if command -v kind >/dev/null 2>&1; then
-    command -v kind
-    return
-  fi
   local os arch bin
   os=$(uname -s | tr '[:upper:]' '[:lower:]')
   case $(uname -m) in arm64 | aarch64) arch=arm64 ;; *) arch=amd64 ;; esac
@@ -48,8 +48,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-pass() { echo "  ok   $1"; }
-fail() { echo "  FAIL $1"; failures=$((failures + 1)); }
 https_get() { # https_get HOST PATH [curl args...]: through the Ingress; -k, the issuer is self-signed
   local host=$1 path=$2
   shift 2
@@ -105,8 +103,6 @@ done
 
 echo "Applying the kustomization..."
 copy_dir=$WORK/repo
-# shellcheck source=tests/k8s_common.sh
-. tests/k8s_common.sh
 copy_repo "$copy_dir"
 cat >"$copy_dir/.env" <<EOF
 OTEL_AUTH_TOKEN=$OTEL_AUTH_TOKEN

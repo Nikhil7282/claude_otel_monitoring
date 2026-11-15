@@ -167,10 +167,15 @@ function Show-SettingsFile {
     $text = [System.IO.File]::ReadAllText($SettingsFile)
     Write-Output ($text -replace 'Bearer [^"]*', 'Bearer ****').TrimEnd()
 
+    # Like mac_install.sh --check: an endpoint without a port means the scheme's default.
     $configured = (ConvertFrom-Json $text).env.OTEL_EXPORTER_OTLP_ENDPOINT
-    if ($configured -notmatch $SafeEndpoint) { Exit-WithError "no usable OTEL_EXPORTER_OTLP_ENDPOINT in $SettingsFile" }
-    $hostName = $Matches[1]
-    $port = [int]$Matches[2]
+    if ($configured -notmatch '^(https?)://([A-Za-z0-9.-]+)(:([0-9]+))?(/.*)?$') {
+        Exit-WithError "no usable OTEL_EXPORTER_OTLP_ENDPOINT in $SettingsFile"
+    }
+    $hostName = $Matches[2]
+    if ($Matches[4]) { $port = [int]$Matches[4] }
+    elseif ($Matches[1] -eq 'https') { $port = 443 }
+    else { $port = 80 }
     $client = New-Object System.Net.Sockets.TcpClient
     try {
         $reachable = $false

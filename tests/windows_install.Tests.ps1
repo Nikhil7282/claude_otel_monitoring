@@ -242,6 +242,19 @@ Describe '-Check' {
     }
 }
 
+Describe '-Check with an endpoint written without a port' {
+    It 'uses the default port for <Scheme>, like the Mac script' -ForEach @(
+        @{ Scheme = 'https'; Port = 443 }
+        @{ Scheme = 'http'; Port = 80 }
+    ) {
+        New-Case
+        New-Item -ItemType Directory -Force $CaseDir | Out-Null
+        Set-Content -LiteralPath $Settings -Value ('{"env": {"OTEL_EXPORTER_OTLP_ENDPOINT": "' + $Scheme + '://127.0.0.1"}}')
+        Invoke-Install -Arguments '-Check'
+        $Out | Should -Match "127.0.0.1:$Port is"
+    }
+}
+
 Describe '-Uninstall' {
     It 'removes the settings file' {
         New-Case
