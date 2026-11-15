@@ -1,4 +1,4 @@
-# The only way in (ADR-0002): the cluster's ingress-nginx terminates TLS with certificates
+# The only way in: the cluster's ingress-nginx terminates TLS with certificates
 # from cert-manager. Two Ingresses, because backend-protocol applies to a whole Ingress and
 # only the Collector speaks gRPC. Hosts and the issuer come from k8s/settings.env.
 # On another ingress controller, change ingressClassName and the gRPC annotation.

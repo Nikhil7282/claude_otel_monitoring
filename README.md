@@ -2,7 +2,7 @@
 
 A small server and a setup script that show how your company's Claude Code accounts are used on each developer computer: estimated cost, tokens, active time, sessions, lines of code, commits, PRs and how many suggested edits were kept.
 
-The data comes from Claude Code's built-in OpenTelemetry export, so nothing sits between Claude Code and Anthropic ([ADR-0001](docs/adr/0001-telemetry-not-api-proxy.md) explains why this isn't a proxy). Usage from personal Claude accounts is dropped when it arrives and never stored. If the server is down, Claude Code keeps working; only monitoring data is lost.
+The data comes from Claude Code's built-in OpenTelemetry export, so nothing sits between Claude Code and Anthropic. It's deliberately not a proxy: Max-plan accounts sign in with OAuth, and routing those logins through a proxy isn't supported and puts the accounts at risk. Usage from personal Claude accounts is dropped when it arrives and never stored. If the server is down, Claude Code keeps working; only monitoring data is lost.
 
 ```
 Mac / Windows PC                      your server
@@ -12,7 +12,7 @@ Claude Code ──OTLP/gRPC over TLS──►  nginx ──► OTel Collector �
                                                filter)
 ```
 
-Words used below: a **Device** is one developer computer (Mac or Windows PC) with the setup installed. A **Company Account** is a Claude account the company pays for; only those are recorded. See [`CONTEXT.md`](CONTEXT.md).
+Words used below: a **Device** is one developer computer (Mac or Windows PC) with the setup installed. A **Company Account** is a Claude account the company pays for; only those are recorded.
 
 ## Choose how to run the server
 
@@ -24,7 +24,7 @@ Words used below: a **Device** is one developer computer (Mac or Windows PC) wit
 | Cost | A 2 GB VM (or 1 GB with swap) | A few hundred MB of cluster memory, 11 GB of volumes |
 | Steps | [Single VM](#single-vm) | [Kubernetes cluster](#kubernetes-cluster) |
 
-Don't create a cluster just for this. The stack is one Prometheus with local storage, so a cluster adds parts and cost without making it more available ([ADR-0002](docs/adr/0002-nginx-is-the-only-front-door.md)).
+Don't create a cluster just for this. The stack is one Prometheus with local storage, so a cluster adds parts and cost without making it more available. Either way, nginx is the only way in.
 
 Both paths end with [onboarding Devices](#onboard-devices).
 
@@ -430,5 +430,4 @@ This runs, all in Docker:
 | `collector/`, `prometheus/`, `grafana/` | Service configuration. The dashboard is `grafana/dashboards/claude-code-usage.json`. |
 | `.env.example` | Server settings: domain, token, Company Account allowlist, Grafana password |
 | `docs/onboard-device.md` | Guide to send someone so they can set up their own Mac or Windows PC |
-| `docs/adr/`, `CONTEXT.md` | Why it's built this way, and the words it uses |
 | `tests/` | Everything `make test` runs |

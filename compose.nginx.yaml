@@ -1,4 +1,4 @@
-# Production setup (ADR-0002): the host's nginx owns ports 80/443, terminates TLS
+# Production setup: the host's nginx owns ports 80/443, terminates TLS
 # (nginx/claude-otel.conf.template) and proxies to the Collector and Grafana on
 # localhost-only ports, so nothing is reachable from outside except through nginx. Every
 # container has a memory limit so the stack fits a 1 GB VM with swap.
