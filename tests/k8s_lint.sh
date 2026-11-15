@@ -26,13 +26,10 @@ check() { # check DESCRIPTION COMMAND...
   if "$@"; then pass "$desc"; else fail "$desc"; fi
 }
 
-# The repo as git sees it (tracked and new, not ignored), plus the two settings files a
-# user would create from the examples.
-git ls-files -z --cached --others --exclude-standard | while IFS= read -r -d '' f; do
-  [[ -e $f ]] || continue
-  mkdir -p "$WORK/repo/$(dirname "$f")"
-  cp "$f" "$WORK/repo/$f"
-done
+# A copy of the repo plus the two settings files a user would create from the examples.
+# shellcheck source=tests/k8s_common.sh
+. tests/k8s_common.sh
+copy_repo "$WORK/repo"
 cp .env.example "$WORK/repo/.env"
 cp k8s/settings.env.example "$WORK/repo/k8s/settings.env"
 # shellcheck disable=SC1091 # the example file, read for its DOMAIN and CLUSTER_ISSUER

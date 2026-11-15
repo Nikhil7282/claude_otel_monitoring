@@ -7,7 +7,7 @@ SHELLCHECK := docker run --rm -v "$(CURDIR)":/mnt:ro -w /mnt koalaman/shellcheck
 PWSH_IMAGE := claude-otel-pwsh-test:pester-5.6.1
 PWSH := docker run --rm -v "$(CURDIR)":/mnt:ro -w /mnt $(PWSH_IMAGE) pwsh -NoProfile -Command
 
-.PHONY: test lint mac-install-test windows-install-test pwsh-image smoke frontdoor-nginx
+.PHONY: test test-k8s lint mac-install-test windows-install-test pwsh-image smoke frontdoor-nginx
 
 test: lint mac-install-test windows-install-test smoke frontdoor-nginx
 
@@ -34,3 +34,7 @@ smoke:
 
 frontdoor-nginx:
 	tests/frontdoor-nginx.sh
+
+# The Kubernetes path end to end in a throwaway kind cluster. A few minutes; not in make test.
+test-k8s:
+	tests/k8s_e2e.sh
