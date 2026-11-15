@@ -1,0 +1,53 @@
+# Kubernetes path: kubectl apply -k . from the repo root (see the README). It sits at the
+# root because Kustomize only reads files inside its own folder, and the ConfigMaps are built
+# from the same collector/, prometheus/ and grafana/ files that Compose uses.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: claude-otel
+labels:
+  - pairs: {app.kubernetes.io/part-of: claude-otel}
+
+resources:
+  - k8s/namespace.yaml
+  - k8s/otel-collector.yaml
+  - k8s/prometheus.yaml
+  - k8s/grafana.yaml
+  - k8s/ingress.yaml
+
+configMapGenerator:
+  - name: otel-collector-config
+    files: [collector/config.yaml]
+  - name: prometheus-config
+    files: [prometheus/prometheus.yml]
+  - name: grafana-datasources
+    files: [grafana/provisioning/datasources/prometheus.yaml]
+  - name: grafana-dashboard-providers
+    files: [grafana/provisioning/dashboards/dashboards.yaml]
+  - name: grafana-dashboards
+    files: [grafana/dashboards/claude-code-usage.json]
+  # DOMAIN and CLUSTER_ISSUER, copied into the manifests below. Build-time only: the
+  # local-config annotation keeps this ConfigMap out of the cluster.
+  - name: claude-otel-settings
+    envs: [k8s/settings.env]
+    options:
+      disableNameSuffixHash: true
+      annotations: {config.kubernetes.io/local-config: "true"}
+
+# The same .env as the VM path. Containers read only the keys they need from it.
+secretGenerator:
+  - name: claude-otel
+    envs: [.env]
+
+replacements:
+  - source: {kind: ConfigMap, name: claude-otel-settings, fieldPath: data.DOMAIN}
+    targets:
+      - select: {kind: Ingress}
+        fieldPaths: [spec.rules.0.host, spec.tls.0.hosts.0]
+        options: {delimiter: ".", index: 1}
+      - select: {kind: Deployment, name: grafana}
+        fieldPaths: ["spec.template.spec.containers.[name=grafana].env.[name=GF_SERVER_ROOT_URL].value"]
+        options: {delimiter: ".", index: 1}
+  - source: {kind: ConfigMap, name: claude-otel-settings, fieldPath: data.CLUSTER_ISSUER}
+    targets:
+      - select: {kind: Ingress}
+        fieldPaths: [metadata.annotations.cert-manager\.io/cluster-issuer]

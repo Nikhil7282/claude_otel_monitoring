@@ -18,6 +18,7 @@ lint: pwsh-image
 	jq empty grafana/dashboards/*.json
 	$(PWSH) '$$found = foreach ($$f in "windows_install.ps1", "tests/windows_install.Tests.ps1") { Invoke-ScriptAnalyzer -Path $$f -Settings tests/PSScriptAnalyzerSettings.psd1 }; if ($$found) { $$found | Format-Table -AutoSize | Out-String -Width 200; exit 1 }'
 	DOMAIN=example.com $(COMPOSE) -f compose.nginx.yaml config --quiet
+	tests/k8s_lint.sh
 
 mac-install-test:
 	tests/mac_install_test.sh
