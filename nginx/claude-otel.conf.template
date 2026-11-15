@@ -1,5 +1,5 @@
 # The monitoring stack behind the server's existing nginx. Render with nginx/render.sh;
-# see docs/deploy-hostinger.md. IPv4 only: the hostnames have no IPv6 (AAAA) record.
+# see the README (Single VM, step 7). IPv4 only: the hostnames have no IPv6 (AAAA) record.
 
 # Devices send OTLP over gRPC, which needs HTTP/2.
 server {
