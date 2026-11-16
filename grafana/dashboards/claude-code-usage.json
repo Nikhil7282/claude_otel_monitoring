@@ -887,8 +887,8 @@
           "fields": "",
           "values": false
         },
-        "minVizHeight": 24,
-        "maxVizHeight": 36,
+        "minVizHeight": 38,
+        "maxVizHeight": 40,
         "text": {
           "titleSize": 14,
           "valueSize": 14
@@ -1256,6 +1256,10 @@
               {
                 "id": "unit",
                 "value": "short"
+              },
+              {
+                "id": "custom.width",
+                "value": 105
               }
             ]
           },
@@ -1268,6 +1272,10 @@
               {
                 "id": "unit",
                 "value": "s"
+              },
+              {
+                "id": "custom.width",
+                "value": 115
               }
             ]
           },
@@ -1280,6 +1288,10 @@
               {
                 "id": "unit",
                 "value": "short"
+              },
+              {
+                "id": "custom.width",
+                "value": 125
               }
             ]
           },
@@ -1292,6 +1304,10 @@
               {
                 "id": "unit",
                 "value": "short"
+              },
+              {
+                "id": "custom.width",
+                "value": 110
               }
             ]
           },
@@ -1304,6 +1320,10 @@
               {
                 "id": "unit",
                 "value": "short"
+              },
+              {
+                "id": "custom.width",
+                "value": 130
               }
             ]
           },
@@ -1316,6 +1336,10 @@
               {
                 "id": "unit",
                 "value": "short"
+              },
+              {
+                "id": "custom.width",
+                "value": 95
               }
             ]
           },
@@ -1328,6 +1352,10 @@
               {
                 "id": "unit",
                 "value": "short"
+              },
+              {
+                "id": "custom.width",
+                "value": 70
               }
             ]
           },
@@ -1458,6 +1486,54 @@
               {
                 "id": "custom.width",
                 "value": 150
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Owner"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 125
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Owner email"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 285
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Device"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 215
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Serial"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 135
               }
             ]
           }
@@ -1597,8 +1673,8 @@
         "namePlacement": "top",
         "valueMode": "color",
         "sizing": "manual",
-        "minVizHeight": 24,
-        "maxVizHeight": 36,
+        "minVizHeight": 38,
+        "maxVizHeight": 40,
         "text": {
           "titleSize": 14,
           "valueSize": 14
@@ -1668,8 +1744,8 @@
         "namePlacement": "top",
         "valueMode": "color",
         "sizing": "manual",
-        "minVizHeight": 24,
-        "maxVizHeight": 36,
+        "minVizHeight": 38,
+        "maxVizHeight": 40,
         "text": {
           "titleSize": 14,
           "valueSize": 14
