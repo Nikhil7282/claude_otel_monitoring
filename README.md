@@ -393,7 +393,7 @@ After rotating the token or changing `DOMAIN`, re-run the setup script on every 
 
 Company Accounts are shared, so the serial number is what ties usage to a person. The **Usage per Device** table shows **Owner** and **Owner email** for every Device on the server's owner list. A Device that isn't on the list still shows, with those two columns empty.
 
-The list is `prometheus/rules/device-owners.yml` on the server. It holds names and work emails, so it is git-ignored and never pushed. Each Device is one Prometheus recording rule:
+The list is `prometheus/rules/device-owners.yml` on the server (Prometheus loads every `.yml` file in that folder). It holds names and work emails, so it is git-ignored and never pushed. Each Device is one Prometheus recording rule:
 
 ```yaml
 - record: cmw_device_owner_info
@@ -405,7 +405,7 @@ The serial (`device_id`) is the one in the table's **Serial** column, or the one
 
 ```bash
 cd ~/claude_otel_monitoring
-# First time only: start from the example
+# First time only: copy the example, then replace its two example rules (Asha, Ravi)
 cp -n prometheus/rules/device-owners.yml.example prometheus/rules/device-owners.yml
 nano prometheus/rules/device-owners.yml        # add, change or delete a rule
 docker compose exec prometheus promtool check rules /etc/prometheus/rules/device-owners.yml
