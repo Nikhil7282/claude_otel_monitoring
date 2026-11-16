@@ -1,0 +1,4 @@
+# A second Device with the same hostname as FIXTURE-DEVICE (two Macs both called
+# "fixture-host"). Its cost is in an existing session (s-one-b), so session counts don't
+# change; the per-Device charts must keep the two apart by serial instead of adding them up.
+claude_code_cost_usage_USD_total{device_id="TWIN-DEVICE",host_name="fixture-host",user_email="company-two@example.org",session_id="s-one-b",model="claude-opus-5-5"} 0.3

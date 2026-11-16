@@ -76,13 +76,14 @@ query_values() {
     jq -r '.data.result[]? | [(.metric.user_email // empty), .value[1]] | join(" ")' 2>/dev/null | sort || true
 }
 
-# query_rows QUERY [TIME]: one "host_name user_email value" line per result, evaluated at
-# TIME (unix seconds, default now). A missing host_name prints as an empty first field.
+# query_rows QUERY [TIME]: one "name user_email value" line per result, evaluated at
+# TIME (unix seconds, default now). The name is host_name, or device_label for the charts
+# that show "<host_name> · <serial>". A missing name prints as an empty first field.
 query_rows() {
   local args=(--data-urlencode "query=$1")
   if [[ -n ${2:-} ]]; then args+=(--data-urlencode "time=$2"); fi
   curl -sG "$PROM_URL/api/v1/query" "${args[@]}" |
-    jq -r '.data.result[]? | [(.metric.host_name // ""), (.metric.user_email // ""), .value[1]] | join(" ")' 2>/dev/null | sort || true
+    jq -r '.data.result[]? | [(.metric.host_name // .metric.device_label // ""), (.metric.user_email // ""), .value[1]] | join(" ")' 2>/dev/null | sort || true
 }
 
 pass() { echo "  ok   $1"; }
@@ -117,7 +118,8 @@ send_metric SMOKE-COMPANY-TWO company-two@example.org
 # Real-shaped Claude Code series for dashboard checks, written straight to Prometheus.
 "${COMPOSE[@]}" run --rm --no-deps -v "$PWD/tests/fixtures:/fixtures:ro" --entrypoint promtool \
   prometheus push metrics http://prometheus:9090/api/v1/write \
-  /fixtures/account-switch.prom /fixtures/desktop-app.prom /fixtures/models-and-cache.prom >/dev/null 2>&1
+  /fixtures/account-switch.prom /fixtures/desktop-app.prom /fixtures/models-and-cache.prom \
+  /fixtures/same-hostname.prom >/dev/null 2>&1
 
 echo "Assertions:"
 for device in SMOKE-COMPANY-ONE SMOKE-COMPANY-TWO; do
@@ -190,7 +192,8 @@ else
   fail "Sessions used counts only sessions with model requests (got '${sessions_total}', want 3)"
 fi
 sessions_per_account=$(query_rows "$(panel_query 'Usage per Device' D)" | tr '\n' ';')
-if [[ $sessions_per_account == "Desktop app (cyberminds) company-one@example.com 1;fixture-host company-one@example.com 2;fixture-host company-two@example.org 1;" ]]; then
+# fixture-host appears twice for company-two: FIXTURE-DEVICE and TWIN-DEVICE share the name.
+if [[ $sessions_per_account == "Desktop app (cyberminds) company-one@example.com 1;fixture-host company-one@example.com 2;fixture-host company-two@example.org 1;fixture-host company-two@example.org 1;" ]]; then
   pass "Sessions used per account follows /login account switches"
 else
   fail "Sessions used per account follows /login account switches (got '${sessions_per_account}')"
@@ -236,16 +239,24 @@ query_series() {
     jq -r --arg label "$2" '.data.result[]? | [(.metric[$label] // ""), .value[1]] | join(" ")' 2>/dev/null || true
 }
 by_model=$(query_series "$(panel_query 'Estimated cost by model' A)" model | sort | tr '\n' ';')
-if [[ $by_model == "claude-opus-5-5 4.31;claude-sonnet-5-5 0.05;" ]]; then
+if [[ $by_model == "claude-opus-5-5 4.61;claude-sonnet-5-5 0.05;" ]]; then
   pass "Estimated cost by model has one slice per model"
 else
   fail "Estimated cost by model has one slice per model (got '${by_model}')"
 fi
-top_devices=$(query_series "$(panel_query 'Top Devices by estimated cost' A)" host_name | tr '\n' ';')
-if [[ $top_devices == "Desktop app (cyberminds) 2.5;fixture-host 1.86;" ]]; then
-  pass "Top Devices by estimated cost is ordered by cost and names Desktop app usage"
+top_devices=$(query_series "$(panel_query 'Top Devices by estimated cost' A)" device_label | tr '\n' ';')
+if [[ $top_devices == "Desktop app (cyberminds) 2.5;fixture-host · FIXTURE-DEVICE 1.86;fixture-host · TWIN-DEVICE 0.3;" ]]; then
+  pass "Top Devices by estimated cost is ordered by cost, keeps same-named Devices apart and names Desktop app usage"
 else
-  fail "Top Devices by estimated cost is ordered by cost and names Desktop app usage (got '${top_devices}')"
+  fail "Top Devices by estimated cost is ordered by cost, keeps same-named Devices apart and names Desktop app usage (got '${top_devices}')"
+fi
+# The daily chart looks a day forward, so it is checked from an hour ago.
+daily_twins=$(query_rows "$(panel_query "Estimated cost (API-equivalent) per Device per day" A)" "$hour_ago" |
+  grep -c '^fixture-host · ' || true)
+if [[ $daily_twins == 2 ]]; then
+  pass "Daily cost per Device keeps same-named Devices apart, by serial"
+else
+  fail "Daily cost per Device keeps same-named Devices apart, by serial (got $daily_twins fixture-host rows, want 2)"
 fi
 cache_hit=$(query_values "$(panel_query 'Cache hit rate' A)")
 if [[ $cache_hit == 0.75 ]]; then
