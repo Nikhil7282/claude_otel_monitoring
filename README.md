@@ -381,12 +381,38 @@ On the VM, commands run in `~/claude_otel_monitoring`. On Kubernetes, they run i
 | **Check the certificate** | `sudo certbot certificates --cert-name claude-otel` | `kubectl -n claude-otel get certificate` |
 | **Change `DOMAIN`** | New A records, `DOMAIN` in `.env`, `docker compose up -d`, the certbot command from step 6 with the new names (same `--cert-name`), then the `render.sh` line from step 7 | New DNS records, `DOMAIN` in `k8s/settings.env`, `kubectl apply -k .` |
 | **Move to another server** | Set up the new VM with the old `.env` (same token and `DOMAIN`), copy the Docker volumes if you want the history, point the two A records at the new IP, then get the certificate (step 6). No Device changes. | Apply to the new cluster with the same two files, restore the PVCs if you want the history, point the DNS records at the new ingress. No Device changes. |
+| **Name a Device's owner** | Edit `prometheus/rules/device-owners.yml`, then check and reload: see [Device owners](#device-owners). | Not supported yet: the Owner columns stay empty. |
 | **Remove a Device** | On the Mac: `sudo ./mac_install.sh --uninstall`. On Windows, in an administrator PowerShell after the `Set-ExecutionPolicy` line: `.\windows_install.ps1 -Uninstall`. Its history stays on the dashboard. | Same |
 | **Find a silent Device** | The **Active Devices** tile counts silent Devices; sort the per-Device table by **Last seen (ago)**. | Same |
 | **Remove everything** | `sudo rm /etc/nginx/sites-enabled/claude-otel && sudo nginx -t && sudo systemctl reload nginx`, then `docker compose down` (add `-v` to delete the data too) | `kubectl delete -k .` (this deletes the namespace, so the data goes too) |
 | **Backups** | Your provider's disk snapshots or backups (step 1). All data is in Docker volumes on the VM's disk. | Your cluster's volume snapshots or Velero |
 
 After rotating the token or changing `DOMAIN`, re-run the setup script on every Device with the new value. Each Device stops reporting until it's updated.
+
+## Device owners
+
+Company Accounts are shared, so the serial number is what ties usage to a person. The **Usage per Device** table shows **Owner** and **Owner email** for every Device on the server's owner list. A Device that isn't on the list still shows, with those two columns empty.
+
+The list is `prometheus/rules/device-owners.yml` on the server. It holds names and work emails, so it is git-ignored and never pushed. Each Device is one Prometheus recording rule:
+
+```yaml
+- record: cmw_device_owner_info
+  expr: vector(1)
+  labels: {device_id: C02EXAMPLE01, owner: Asha, owner_email: asha@example.com}
+```
+
+The serial (`device_id`) is the one in the table's **Serial** column, or the one `mac_install.sh --check` prints on the Device.
+
+```bash
+cd ~/claude_otel_monitoring
+# First time only: start from the example
+cp -n prometheus/rules/device-owners.yml.example prometheus/rules/device-owners.yml
+nano prometheus/rules/device-owners.yml        # add, change or delete a rule
+docker compose exec prometheus promtool check rules /etc/prometheus/rules/device-owners.yml
+docker compose kill -s HUP prometheus           # reload: no restart, no gap in the data
+```
+
+The change shows on the dashboard within about 15 seconds. If a reloaded file has an error, Prometheus keeps the last good list and logs the error (`docker compose logs prometheus`). The same serial listed twice shows one of the two owners, so delete the old line when a laptop changes hands. The table shows the current owner for all usage in the selected range, not who owned the Device at the time.
 
 ## Known limit: the Claude Desktop app
 
@@ -427,7 +453,7 @@ This runs, all in Docker:
 | `compose.nginx.yaml`, `nginx/` | Production on a VM: localhost-only ports, memory limits and the nginx site template |
 | `kustomization.yaml`, `k8s/` | The Kubernetes path: manifests, Ingresses and the settings example |
 | `compose.local.yaml` | Exposes the stack on localhost for trying it on your own computer |
-| `collector/`, `prometheus/`, `grafana/` | Service configuration. The dashboard is `grafana/dashboards/claude-code-usage.json`. |
+| `collector/`, `prometheus/`, `grafana/` | Service configuration. The dashboard is `grafana/dashboards/claude-code-usage.json`; the Device owner list goes in `prometheus/rules/` (example only in git). |
 | `.env.example` | Server settings: domain, token, Company Account allowlist, Grafana password |
 | `docs/onboard-device.md` | Guide to send someone so they can set up their own Mac or Windows PC |
 | `tests/` | Everything `make test` runs |

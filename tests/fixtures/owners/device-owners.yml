@@ -1,0 +1,19 @@
+# Smoke-test owner list (fake people), mounted in place of prometheus/rules/.
+groups:
+  - name: device-owners
+    rules:
+      - record: cmw_device_owner_info
+        expr: vector(1)
+        labels: {device_id: FIXTURE-DEVICE, owner: Fixture Owner, owner_email: fixture.owner@example.com}
+      # The same serial twice (a laptop reassigned without removing the old line):
+      # the table must still show one row per Device and Company Account.
+      - record: cmw_device_owner_info
+        expr: vector(1)
+        labels: {device_id: TWIN-DEVICE, owner: Twin Owner A, owner_email: twin.a@example.com}
+      - record: cmw_device_owner_info
+        expr: vector(1)
+        labels: {device_id: TWIN-DEVICE, owner: Twin Owner B, owner_email: twin.b@example.com}
+      # An owner whose Device has sent nothing must not add a row.
+      - record: cmw_device_owner_info
+        expr: vector(1)
+        labels: {device_id: GHOST-DEVICE, owner: Ghost Owner, owner_email: ghost@example.com}

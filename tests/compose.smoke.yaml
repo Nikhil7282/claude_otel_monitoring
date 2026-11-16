@@ -4,6 +4,9 @@ services:
   prometheus:
     ports:
       - 127.0.0.1:29090:9090
+    volumes:
+      # Fake Device owners in place of the server's prometheus/rules/.
+      - ./tests/fixtures/owners:/etc/prometheus/rules:ro
   grafana:
     ports:
       - 127.0.0.1:23000:3000

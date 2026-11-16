@@ -14,6 +14,8 @@ test: lint mac-install-test windows-install-test smoke frontdoor-nginx
 lint: pwsh-image
 	$(COMPOSE) run --rm --no-deps otel-collector validate --config=/etc/otelcol-contrib/config.yaml
 	$(COMPOSE) run --rm --no-deps --entrypoint promtool prometheus check config /etc/prometheus/prometheus.yml
+	$(COMPOSE) run --rm --no-deps -v "$$PWD/tests/fixtures/owners:/owners:ro" --entrypoint promtool prometheus \
+		check rules /etc/prometheus/rules/device-owners.yml.example /owners/device-owners.yml
 	$(SHELLCHECK) mac_install.sh tests/*.sh nginx/*.sh
 	jq empty grafana/dashboards/*.json
 	$(PWSH) '$$found = foreach ($$f in "windows_install.ps1", "tests/windows_install.Tests.ps1") { Invoke-ScriptAnalyzer -Path $$f -Settings tests/PSScriptAnalyzerSettings.psd1 }; if ($$found) { $$found | Format-Table -AutoSize | Out-String -Width 200; exit 1 }'
