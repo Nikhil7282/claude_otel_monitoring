@@ -391,7 +391,7 @@ After rotating the token or changing `DOMAIN`, re-run the setup script on every 
 
 ## Device owners
 
-Company Accounts are shared, so the serial number is what ties usage to a person. The **Usage per Device** table shows **Owner** and **Owner email** for every Device on the server's owner list. A Device that isn't on the list still shows, with those two columns empty.
+Company Accounts are shared, so the serial number is what ties usage to a person. The **Usage per Device** table shows **Owner** and **Owner email** for every Device on the server's owner list. The bar charts (Top Devices by estimated cost, Lines of code, Commits and PRs) label each Device as **owner · serial**. A Device that isn't on the list still shows: with the two Owner columns empty, and with its computer name in place of the owner on the bar charts. The daily cost chart keeps the computer name, because the owner list has no history and a name change part-way through the range would split one Device's line in two.
 
 The list is `prometheus/rules/device-owners.yml` on the server (Prometheus loads every `.yml` file in that folder). It holds names and work emails, so it is git-ignored and never pushed. Each Device is one Prometheus recording rule:
 
@@ -412,7 +412,7 @@ docker compose exec prometheus promtool check rules /etc/prometheus/rules/device
 docker compose kill -s HUP prometheus           # reload: no restart, no gap in the data
 ```
 
-The change shows on the dashboard within about 15 seconds. If a reloaded file has an error, Prometheus keeps the last good list and logs the error (`docker compose logs prometheus`). The same serial listed twice shows one of the two owners, so delete the old line when a laptop changes hands. The table shows the current owner for all usage in the selected range, not who owned the Device at the time.
+The change shows on the dashboard within about 15 seconds. If a reloaded file has an error, Prometheus keeps the last good list and logs the error (`docker compose logs prometheus`). The same serial listed twice shows one of the two owners, so delete the old line when a laptop changes hands. The table and bar charts show the current owner for all usage in the selected range, not who owned the Device at the time.
 
 ## Known limit: the Claude Desktop app
 
