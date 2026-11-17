@@ -119,7 +119,7 @@ send_metric SMOKE-COMPANY-TWO company-two@example.org
 "${COMPOSE[@]}" run --rm --no-deps -v "$PWD/tests/fixtures:/fixtures:ro" --entrypoint promtool \
   prometheus push metrics http://prometheus:9090/api/v1/write \
   /fixtures/account-switch.prom /fixtures/desktop-app.prom /fixtures/models-and-cache.prom \
-  /fixtures/same-hostname.prom >/dev/null 2>&1
+  /fixtures/same-hostname.prom /fixtures/unowned-device.prom >/dev/null 2>&1
 
 echo "Assertions:"
 for device in SMOKE-COMPANY-ONE SMOKE-COMPANY-TWO; do
@@ -257,6 +257,55 @@ if [[ $daily_twins == 2 ]]; then
   pass "Daily cost per Device keeps same-named Devices apart, by serial"
 else
   fail "Daily cost per Device keeps same-named Devices apart, by serial (got $daily_twins fixture-host rows, want 2)"
+fi
+# Device owners come from tests/fixtures/owners (Prometheus recording rules).
+# owner_rows QUERY: one "device_id|host_name|user_email|owner|owner_email" line per result.
+owner_rows() {
+  curl -sG "$PROM_URL/api/v1/query" --data-urlencode "query=$1" |
+    jq -r '.data.result[]? | .metric | [(.device_id // ""), (.host_name // ""), (.user_email // ""), (.owner // ""), (.owner_email // "")] | join("|")' 2>/dev/null | sort || true
+}
+if wait_for_series cmw_device_owner_info; then
+  pass "Prometheus loads the Device owner rules"
+else
+  fail "Prometheus loads the Device owner rules"
+fi
+while read -r ref; do
+  rows=$(owner_rows "$(panel_query 'Usage per Device' "$ref")")
+  problems=""
+  fixture=$(grep '^FIXTURE-DEVICE|' <<<"$rows" || true)
+  # FIXTURE-DEVICE has cost, tokens and sessions (A-D) but no lines, commits or active time.
+  if [[ $ref =~ ^[ABCD]$ && -z $fixture ]]; then
+    problems+="no FIXTURE-DEVICE rows; "
+  elif [[ -n $fixture ]] && grep -qv '|Fixture Owner|fixture.owner@example.com$' <<<"$fixture"; then
+    problems+="FIXTURE-DEVICE rows lack its owner; "
+  fi
+  if [[ -n $(cut -d'|' -f1-3 <<<"$rows" | sort | uniq -d) ]]; then
+    problems+="a Device and Company Account appear twice; "
+  fi
+  if grep -q '^GHOST-DEVICE|' <<<"$rows"; then problems+="an owner without usage added a row; "; fi
+  if [[ -n $(awk -F'|' '$1 == "" && $4 != ""' <<<"$rows") ]]; then problems+="a row without a serial got an owner; "; fi
+  if [[ -z $problems ]]; then
+    pass "Usage per Device $ref shows each Device's owner, once per row"
+  else
+    fail "Usage per Device $ref shows each Device's owner, once per row ($problems got '${rows//$'\n'/;}')"
+  fi
+done < <(jq -r '.panels[] | select(.title == "Usage per Device") | .targets[].refId' grafana/dashboards/claude-code-usage.json)
+# Every query must pick the same one of the two owners, or the table's merge would split the row.
+twin=$(while read -r ref; do owner_rows "$(panel_query 'Usage per Device' "$ref")" | grep '^TWIN-DEVICE|' || true; done < <(
+  jq -r '.panels[] | select(.title == "Usage per Device") | .targets[].refId' grafana/dashboards/claude-code-usage.json) | sort -u)
+if [[ $twin == "TWIN-DEVICE|fixture-host|company-two@example.org|Twin Owner A|twin.a@example.com" ||
+  $twin == "TWIN-DEVICE|fixture-host|company-two@example.org|Twin Owner B|twin.b@example.com" ]]; then
+  pass "A serial listed twice in the owner file still gives one row with one owner"
+else
+  fail "A serial listed twice in the owner file still gives one row with one owner (got '${twin//$'\n'/;}')"
+fi
+unowned=$(query_rows "$(panel_query 'Usage per Device' G)")
+unowned_owner=$(owner_rows "$(panel_query 'Usage per Device' G)" | grep '^UNOWNED-DEVICE|' || true)
+if grep -Fxq "unowned-host company-one@example.com 1" <<<"$unowned" &&
+  [[ $unowned_owner == "UNOWNED-DEVICE|unowned-host|company-one@example.com||" ]]; then
+  pass "A Device with no owner entry still shows, with the owner empty"
+else
+  fail "A Device with no owner entry still shows, with the owner empty (got '${unowned//$'\n'/;}' / '${unowned_owner}')"
 fi
 cache_hit=$(query_values "$(panel_query 'Cache hit rate' A)")
 if [[ $cache_hit == 0.75 ]]; then

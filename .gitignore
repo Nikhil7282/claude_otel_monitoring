@@ -8,6 +8,10 @@ docs/adr/
 # Secrets
 .env
 
+# Device owners (names and work emails) stay on the server; only the .example is committed
+prometheus/rules/*
+!prometheus/rules/*.example
+
 # Claude Code local state (agent worktrees)
 .claude/
 

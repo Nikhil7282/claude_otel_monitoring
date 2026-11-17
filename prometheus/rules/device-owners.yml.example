@@ -1,0 +1,13 @@
+# Device owners: who owns each Device, by serial. Shown in the dashboard's Usage per Device.
+# Copy to device-owners.yml in this folder (git-ignored: the repo is public) and edit there.
+# One rule per Device; only device_id, owner and owner_email change between rules.
+# After editing, check and reload (see the README, "Device owners").
+groups:
+  - name: device-owners
+    rules:
+      - record: cmw_device_owner_info
+        expr: vector(1)
+        labels: {device_id: C02EXAMPLE01, owner: Asha, owner_email: asha@example.com}
+      - record: cmw_device_owner_info
+        expr: vector(1)
+        labels: {device_id: 1EXAMPLE02, owner: Ravi, owner_email: ravi@example.com}

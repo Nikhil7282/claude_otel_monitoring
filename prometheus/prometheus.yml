@@ -1,2 +1,8 @@
 # Push-only: all data arrives from the Collector through remote write, so nothing is scraped.
-global: {}
+global:
+  # How often recording rules run; short, so an owner edit shows within seconds of a reload.
+  evaluation_interval: 15s
+# Device owners (serial -> owner, owner email), kept on the server only: see the README.
+# A glob that matches nothing is fine, so a fresh install starts with no owners.
+rule_files:
+  - /etc/prometheus/rules/*.yml

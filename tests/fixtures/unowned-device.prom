@@ -1,0 +1,3 @@
+# A Device with no owner entry. Only a commit is recorded, so cost, session and Active
+# Devices expectations don't change; Usage per Device must still show it, with no owner.
+claude_code_commit_count_total{device_id="UNOWNED-DEVICE",host_name="unowned-host",user_email="company-one@example.com",session_id="s-one-b"} 1
