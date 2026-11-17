@@ -244,12 +244,6 @@ if [[ $by_model == "claude-opus-5-5 4.61;claude-sonnet-5-5 0.05;" ]]; then
 else
   fail "Estimated cost by model has one slice per model (got '${by_model}')"
 fi
-top_devices=$(query_series "$(panel_query 'Top Devices by estimated cost' A)" device_label | tr '\n' ';')
-if [[ $top_devices == "Desktop app (cyberminds) 2.5;fixture-host · FIXTURE-DEVICE 1.86;fixture-host · TWIN-DEVICE 0.3;" ]]; then
-  pass "Top Devices by estimated cost is ordered by cost, keeps same-named Devices apart and names Desktop app usage"
-else
-  fail "Top Devices by estimated cost is ordered by cost, keeps same-named Devices apart and names Desktop app usage (got '${top_devices}')"
-fi
 # The daily chart looks a day forward, so it is checked from an hour ago.
 daily_twins=$(query_rows "$(panel_query "Estimated cost (API-equivalent) per Device per day" A)" "$hour_ago" |
   grep -c '^fixture-host · ' || true)
@@ -306,6 +300,21 @@ if grep -Fxq "unowned-host company-one@example.com 1" <<<"$unowned" &&
   pass "A Device with no owner entry still shows, with the owner empty"
 else
   fail "A Device with no owner entry still shows, with the owner empty (got '${unowned//$'\n'/;}' / '${unowned_owner}')"
+fi
+top_devices=$(query_series "$(panel_query 'Top Devices by estimated cost' A)" device_label | tr '\n' ';')
+# Bars read "<owner> · <serial>" (owners from tests/fixtures/owners). TWIN-DEVICE has two
+# owner entries, so either name may win, but only one.
+if [[ $top_devices =~ ^"Desktop app (cyberminds) 2.5;Fixture Owner · FIXTURE-DEVICE 1.86;Twin Owner "[AB]" · TWIN-DEVICE 0.3;"$ ]]; then
+  pass "Top Devices by estimated cost is ordered by cost, names each Device's owner and names Desktop app usage"
+else
+  fail "Top Devices by estimated cost is ordered by cost, names each Device's owner and names Desktop app usage (got '${top_devices}')"
+fi
+# A Device with no owner entry falls back to its computer name.
+commit_bars=$(query_series "$(panel_query 'Commits and PRs per Device' A)" device_label | sort | tr '\n' ';')
+if [[ $commit_bars == "unowned-host · UNOWNED-DEVICE 1;" ]]; then
+  pass "Device bar charts show the computer name for a Device with no owner"
+else
+  fail "Device bar charts show the computer name for a Device with no owner (got '${commit_bars}')"
 fi
 cache_hit=$(query_values "$(panel_query 'Cache hit rate' A)")
 if [[ $cache_hit == 0.75 ]]; then
